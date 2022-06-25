@@ -1,0 +1,8 @@
+__pycache__/
+build/
+cards_orig/
+dist/
+Executables/
+Old/
+NotSynched/
+.DS_Store
