@@ -29,7 +29,8 @@ class GameBoard:
         pygame.display.set_caption("Jass")
         self.clock = pygame.time.Clock()
         pygame.font.init()
-        self.font = pygame.font.SysFont('Comic Sans MS', 30)
+        self.font_big = pygame.font.SysFont('Comic Sans MS', 30)
+        self.font_small = pygame.font.SysFont('Comic Sans MS', 15)
         self.HandxShift = 30 # x start position to show hands
         
         #Load the atout pictures
@@ -85,9 +86,12 @@ class GameBoard:
         self.SpecialClicks(x, y, DataGame, gameDisplay)
         # Player id deprecated, but temporarily, return the current one if card found
         
-        delta_x = x - 1152//2 - 410
+        W = self.screen.get_width()
+        H = self.screen.get_height()
+
+        delta_x = x - W//2 + 410 # 410 is 4.5 times 91 pixels (rounded) 
         CardPos = delta_x // 91
-        if y >= 648 - 136:
+        if y >= H - 136:
             Player = DataGame.current_player
             # Check if that player has that card
             if handSet.TestCardExist(handSet.players[Player], CardPos):
@@ -132,7 +136,7 @@ class GameBoard:
         else:
             if DataGame.state == DataGame.GameStates.index("SelAtout"):
                 # First player to select atout, so he can chibre. Show the button
-                textsurface = self.font.render('CHIBRE', False, gameBoard.ChibreColor)
+                textsurface = self.font_big.render('CHIBRE', False, gameBoard.ChibreColor)
                 self.screen.blit(textsurface, (gameBoard.ChibreRect.left, (gameBoard.ChibreRect.bottom - gameBoard.ChibreRect.bottom) // 2))
         # If we don't have atout and cannot chibre, don't display anyhting
 
@@ -142,13 +146,21 @@ class GameBoard:
             Color = self.PlayerNumberColor # Standard color
             if GameData.current_player == i: # Special color for current player
                 Color = self.PlayerNumberCurrentColor # Override by in-turn color
-            textsurface = self.font.render(str(i + 1) , False, Color)
+            textsurface = self.font_big.render(str(i + 1) , False, Color)
             self.screen.blit(textsurface, (3, 135 // 2 - 25 + i*135))
 
     def show_scores(self, Scores):
+        W, H = self.screen.get_width(), self.screen.get_height()
         for i in range(2): # Loop on the two teams scores
             CurScore, TotScore = Scores.Team[i]
-            textsurface = self.font.render('Score équipe ' + str(i + 1) + ' : ' + str(CurScore) + '/' + str(TotScore), False, self.ScoresColor)
+            textsurface = self.font_small.render('Score équipe ' + str(i + 1) + ' : ' + str(CurScore) + '/' + str(TotScore), False, self.ScoresColor)
+            self.screen.blit(textsurface, (W-190, H//2 - 30 + i*30))
+        pygame.display.flip() # Update the window content
+
+    def show_scores1(self, Scores):
+        for i in range(2): # Loop on the two teams scores
+            CurScore, TotScore = Scores.Team[i]
+            textsurface = self.font_small.render('Score équipe ' + str(i + 1) + ' : ' + str(CurScore) + '/' + str(TotScore), False, self.ScoresColor)
             self.screen.blit(textsurface, (10, 700 + i*30))
         pygame.display.flip() # Update the window content
 

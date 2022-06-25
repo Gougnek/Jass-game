@@ -103,6 +103,15 @@ class Hand(Deck):
 
     def show_played_cards(self, gameDisplay, card_picts):
         """Shows played cards on the screen"""
+        x,y = 420, 250
+        # Calculate the number of played cards
+        NbCards = len(self.cards)
+        for i in range(NbCards):
+            gameDisplay.blit(card_picts.GetCardPicture(self.cards[i].suit, self.cards[i].rank), (x,y))
+            x=x+45 # move right half of a card
+
+    def show_played_cards1(self, gameDisplay, card_picts):
+        """Shows played cards on the screen"""
         x=0
         # Calculate the number of played cards
         NbCards = len(self.cards)
@@ -111,6 +120,36 @@ class Hand(Deck):
             x=x+45 # move right half of a card
 
     def show_won_cards(self, gameBoard, deck, team_id, DataGame, card_picts):
+        """Shows cards won by the different teams
+        
+        team_id: 0 or 1 depending on the team to display
+        """
+        x, y = 180 + team_id*400 ,5 
+
+        #Display name of team before the deck
+        textsurface = gameBoard.font_big.render('Equipe ' + str(team_id + 1), False, (255, 255, 255))
+        gameBoard.screen.blit(textsurface, (x - 150, y + 40))
+
+        # Calculate the number of played cards
+        NbCards = len(self.cards)
+        if NbCards > 4:
+            # Display first the background of a card
+            gameBoard.screen.blit(card_picts.background_picture, (x-20,y))
+            FirstCard = NbCards -4
+        else:
+            FirstCard = 0
+        if DataGame.latest_winner % 2 == team_id: # Only display cards won from team who won the latest
+            for i in range(FirstCard, NbCards):
+                mypicture = card_picts.GetCardPicture(self.cards[i].suit, self.cards[i].rank)
+                gameBoard.screen.blit(mypicture, (x,y))
+                x=x+45 # move right half of a card
+        else:
+            # For the other team, show only a background if cards have already been won
+            if NbCards > 0:
+                # Display the background of a card
+                gameBoard.screen.blit(card_picts.background_picture, (x-20,y))
+
+    def show_won_cards1(self, gameBoard, deck, team_id, DataGame, card_picts):
         """Shows cards won by the different teams
         
         team_id: 0 or 1 depending on the team to display
