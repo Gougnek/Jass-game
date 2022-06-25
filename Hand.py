@@ -80,9 +80,21 @@ class Hand(Deck):
             # Rotate the cards by 13° each around a point  in left-right middle, but below the card, and display it
             Handset.players[PlayerNumber].DisplayRotatedCardPlayer(gameBoard, surface, (i-4)*13, [90//2, 135], pygame.math.Vector2(0, -135//2), PlayerNumber)
 
-
     def show_cards(self, gameBoard, PlayerNumber, card_picts):
-        """Shows cards on the screen"""
+        """Shows cards on the screen on background picture
+        
+        Note: We assume that the player for which to show the cards
+        Card is 136 high, 91 wide. Background size is supposed to be 1152x648
+
+        """
+        x,y = 1152//2 - 410, 648 - 136
+        NbCards = len(self.cards)
+        for i in range(NbCards):
+            gameBoard.screen.blit(card_picts.GetCardPicture(self.cards[i].suit, self.cards[i].rank), (x,y))
+            x=x+91
+
+    def show_cards1(self, gameBoard, PlayerNumber, card_picts):
+        """Shows cards on the screen (basic function) """
         x,y = gameBoard.HandxShift, 136*PlayerNumber
         NbCards = len(self.cards)
         for i in range(NbCards):

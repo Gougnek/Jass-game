@@ -13,9 +13,10 @@ from GameData import GameData
 from Deck import Deck
 from Card import CardsPictures, Card, CardPicture, Atout
 from Hand import Hand, HandSet
+from GameBoard import *
 import SrvCom, ClientCom
          
-class GameBoard:
+class GameBoardOld:
     """Class containing all graphical functions."""
     
     def __init__(self, Height, Width):
@@ -241,11 +242,11 @@ def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand):
             Quit = True  # Flag that we are done so we exit this loop
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = pygame.mouse.get_pos()
-            player, pos_card = ScreenGame.GetCardByClick(x, y, DataGame, handset, ScreenGame)
+            player, pos_card = DataGame.game_board.GetCardByClick(x, y, DataGame, handset, ScreenGame)
             if player == -1: # Sanity check if the use clics on something valid
                 continue # Stop here and go back to the top of the loop
             # If Sandalone or server: do the action on the card (can be selection of atout or playing it)
-            handset.action_card_selected(player, pos_card, DataGame, PlayedDeckHand, ScreenGame, TeamWonSet)
+            handset.action_card_selected(player, pos_card, DataGame, PlayedDeckHand, DataGame.game_board, TeamWonSet)
             # Make it simple: if we are server, always request clients to update when there was a user clic.
             if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server"):     
                 DataGame.SrvComObject.srv_send_all_data(handset, DataGame, TeamWonSet, PlayedDeckHand)         
@@ -329,7 +330,8 @@ if __name__ == '__main__':
     
     """ GRAPHICAL INIT PART """
     # Construct an object to display
-    ScreenGame = GameBoard(Height = 1200, Width = 900)
+    # ScreenGame = GameBoard( Width = 900, Height = 1200)
+    ScreenGame = GameBoard(Height = 648, Width = 1152)
     DataGame.game_board = ScreenGame # Store reference to screen game for easier acess in functions
       
     """ SERVER INITIAL SETUP """
