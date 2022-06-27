@@ -57,7 +57,7 @@ class GameBoardOld:
             if self.ChibreRect.collidepoint((x,y)):
                 # Change current player and game mode.
                 DataGame.current_player = (DataGame.current_player + 2) % 4 # Define other player in team as current player
-                DataGame.state = DataGame.GameStates.index("SelAtoutChibre")
+                DataGame.set_game_state("SelAtoutChibre")
                 DataGame.key_confirmed = False # Invalidate user
         
         if (DataGame.state == DataGame.GameStates.index("Finished")):
@@ -228,7 +228,7 @@ class Scores:
             self.Team[TeamSetID] = Score, self.Team[TeamSetID][1] + Score # Store current score and add to game score
         
         # Change Game stage to Finished
-        DataGame.state = DataGame.GameStates.index("Finished")
+        DataGame.set_game_state("Finished")
         return
 
 def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand):
@@ -326,7 +326,7 @@ if __name__ == '__main__':
         # Distribute the cards, set first player and change state
         deck.distribute_cards(handset, DataGame)
         handset.Inital_game_first_player(DataGame)
-        DataGame.state = DataGame.GameStates.index("SelAtout") # Change initial state to "SelAtout"
+        DataGame.set_game_state("SelAtout") # Change initial state to "SelAtout"
     
     """ GRAPHICAL INIT PART """
     # Construct an object to display
@@ -358,7 +358,6 @@ if __name__ == '__main__':
         DataGame.cli_connection = myClientSocket
         # Call a function that will listend and interpret initial commands
         myClientSocket.ListenAndInterpretCommands(PlayedDeckHand, TeamWonSet, handset, DataGame)
-        DataGame.state = DataGame.GameStates.index("Play")
         pygame.display.set_caption("Jass client " + str(DataGame.local_player_num))
         print ("Client player number: " + str(DataGame.local_player_num))
     
@@ -372,6 +371,7 @@ if __name__ == '__main__':
             if myClientSocket.state == myClientSocket.CliStates.index("WaitServer"): # Only wait on network is the state is to wait
                 # Stop the event loop and wait for receiving messages from the server
                 myClientSocket.ListenAndInterpretCommands(PlayedDeckHand, TeamWonSet, handset, DataGame)
+                Quit = False # To be removed
                 None # Client is freed from waiting command (ready for update)
 
         # Manage network operation when SERVER
@@ -393,7 +393,7 @@ if __name__ == '__main__':
         Quit = ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand)
 
         """ PERFORM DATA UPDATE AND CALL GRAPHICAL UPDATE """
-        # First define background color based on current state
+        # First define background color based on current state ==> Probably deprecated TODO
         if DataGame.ErrorState != DataGame.ErrorStates.index("NotAllowed"):
             DataGame.game_board.BackgroundColor = DataGame.game_board.BackgroundColorYourTurn
         # Update infos on handset and state if game is finished

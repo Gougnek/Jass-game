@@ -36,8 +36,10 @@ class SrvCom:
         self.SrvState = 0 # Default start state
     
     def srv_change_state(self, NewState):
-        self.state = self.SrvStates.index(NewState)
-        print("Server becomes", NewState)
+        if self.SrvState != self.SrvStates.index(NewState):
+            print("Server becomes", NewState)
+        self.SrvState = self.SrvStates.index(NewState)
+        
 
     def srv_send_header(self, ConID, HeaderRef, PayloadSize):
         """ This function will send the header
@@ -171,19 +173,21 @@ class SrvCom:
         
     def srv_execute_card_selected_command(self, TeamWonSet, CardPos, Handset, PlayedDeck, DataGame):
         """ This function will execute the necessary actions based on card clicked. It aslo send back a feed-back to the client and request the refresh """
+        # Store Current Player value for the execution (in case it changes during the operations)
+        FctCurPlayer = DataGame.current_player
         # Execute the operations as if we were in standalone mode
-        if DataGame.state == DataGame.GameStates.index("SelAtout"):
-            DataGame.atout = Handset.players[DataGame.current_player].cards[CardPos].suit # Store the chosen atout
-            DataGame.state = DataGame.GameStates.index("Play") # Change the server state to Play
+        if DataGame.state == DataGame.GameStates.index("SelAtout") or DataGame.state == DataGame.GameStates.index("SelAtoutChibre"):
+            DataGame.atout = Handset.players[FctCurPlayer].cards[CardPos].suit # Store the chosen atout
+            DataGame.set_game_state("Play") # Change the server state to Play
             self.srv_send_game_data(DataGame) # Send update of the data game (including atout) to everybody
             self.srv_send_refresh() # To force clients refresh
         elif DataGame.state == DataGame.GameStates.index("Play"):
-            if Handset.action_card_selected(DataGame.current_player, CardPos, DataGame, PlayedDeck, DataGame.game_board, TeamWonSet):
+            if Handset.action_card_selected(FctCurPlayer, CardPos, DataGame, PlayedDeck, DataGame.game_board, TeamWonSet):
                 # The action was done successfully
-                self.srv_send_card_valid(DataGame.current_player)
+                self.srv_send_card_valid(FctCurPlayer)
             else:
                 # The action was refused
-                self.srv_send_card_invalid(DataGame.current_player)
+                self.srv_send_card_invalid(FctCurPlayer)
             self.srv_send_all_data(Handset, DataGame, TeamWonSet, PlayedDeck) # Send update of all data after player played
             self.srv_send_refresh() # To force clients refresh
         return
@@ -213,6 +217,8 @@ class SrvCom:
         
         DataGame: Information about the game (needed: current player)
         """
+        # Temporarily (not optimal), send all data before giving turn. This ensures that data like current player is updated for the client
+        self.srv_send_all_data(Handset, DataGame, TeamWonSet, PlayedDeck)
         # First Send the message to the client in turn that he becomes temporarilly the master
         self.srv_send_header(DataGame.current_player - 1, "YourTurn", 0) # -1 because the first connection (index 0) corresponds to player 1
         # Then wait for message from the client, and execute necessary actions

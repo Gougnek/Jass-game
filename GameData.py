@@ -42,9 +42,16 @@ class GameData:
     
     def set_current_player(self, PlayerID):
         self.current_player = PlayerID
+        print ("New Current player is " + str(PlayerID))
 
     def set_current_turn_first_player(self, PlayerID):
         self.current_turn_first_player = PlayerID
+
+    def set_game_state(self, NewGameState):
+        """ Changes the state of the game """
+        if self.state != NewGameState:
+            print ("Changing game state to " + NewGameState)
+        self.state = self.GameStates.index(NewGameState)
 
     def UpdateIfSetFinished(self, handset):
         """ Check if the game (current set) is finished, and modify state in that case
@@ -56,7 +63,7 @@ class GameData:
         if finished:
             # Do that only if we are not already back to Init, because finishing before starting doesn't make any sense
             if self.state == self.GameStates.index("Play"):
-                self.state = self.GameStates.index("Results") # Game is in finished state
+                self.set_game_state("Results") # Game is in finished state
     
     def SetNextPlayer(self):
         """ Set next player based on current one (select next one or go back to list start if this is the last one)
@@ -79,5 +86,5 @@ class GameData:
         self.current_turn_first_player = self.current_first_player_set + 1 % self.nbplayers # first player of the current turn
         self.current_first_player_set = self.current_turn_first_player
         self.current_player = self.current_turn_first_player # Current player in turn
-        self.state = self.GameStates.index("SelAtout") # First stage
+        self.set_game_state("SelAtout") # First stage
         

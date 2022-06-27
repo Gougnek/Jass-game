@@ -41,10 +41,26 @@ class GameBoard:
         # Define a rectangle to position the "Atout" detect clicks on it
         self.AtoutRect = pygame.Rect(self.screen.get_width() - 61, 1, 60, 60) # (Left, top, width, height)
 
-        # Load background picture
+        # Load background picture when error
+        PictureFileName = 'table_background_red.png'
+        try:
+            self.background_pic_error = pygame.image.load(Path("Pictures/") / PictureFileName)
+        except:
+            mypath = "Pictures/" + PictureFileName
+            print(mypath + " not found.")
+
+        # Load background standard picture
         PictureFileName = 'table_background.png'
         try:
             self.background_pic = pygame.image.load(Path("Pictures/") / PictureFileName)
+        except:
+            mypath = "Pictures/" + PictureFileName
+            print(mypath + " not found.")
+
+        # Load background picture when player inactive
+        PictureFileName = 'table_background_grayed.png'
+        try:
+            self.background_pic_inactive = pygame.image.load(Path("Pictures/") / PictureFileName)
         except:
             mypath = "Pictures/" + PictureFileName
             print(mypath + " not found.")
@@ -54,19 +70,24 @@ class GameBoard:
         
         * Selection of "Chibre"
         * Click on the atout at the end
+
+        Returns True if the click could be interpreted. False otherwise
         """
         if (DataGame.state == DataGame.GameStates.index("SelAtout")):
             # Detect if click on the rectangle
             if self.ChibreRect.collidepoint((x,y)):
                 # Change current player and game mode.
                 DataGame.current_player = (DataGame.current_player + 2) % 4 # Define other player in team as current player
-                DataGame.state = DataGame.GameStates.index("SelAtoutChibre")
+                DataGame.set_game_state("SelAtoutChibre")
                 DataGame.key_confirmed = False # Invalidate user
+                return True
         
         if (DataGame.state == DataGame.GameStates.index("Finished")):
             # Detect if click on the atout. This means, new set should start
             if self.AtoutRect.collidepoint((x,y)):
-                DataGame.state = DataGame.GameStates.index("Init")
+                DataGame.set_game_state("Init")
+                return True
+        return False
 
             
 
@@ -83,7 +104,8 @@ class GameBoard:
 
         # Assuming for the moment that line height is 135, and column width is 91 pixels
         
-        self.SpecialClicks(x, y, DataGame, gameDisplay)
+        if self.SpecialClicks(x, y, DataGame, gameDisplay): # Special clic interpreted, return invalid
+            return -1, -1
         # Player id deprecated, but temporarily, return the current one if card found
         
         W = self.screen.get_width()
@@ -96,6 +118,8 @@ class GameBoard:
             # Check if that player has that card
             if handSet.TestCardExist(handSet.players[Player], CardPos):
                 return Player, CardPos
+            else:
+                Player = -1 # The player doesn't have this card. Invalidate the selection
         else:
             Player = -1
         return Player, CardPos
@@ -141,6 +165,27 @@ class GameBoard:
         # If we don't have atout and cannot chibre, don't display anyhting
 
     def show_player_numbers(self, handset, GameData):
+        """ Display the player number. There are different situation
+        * Standalone: Just display the current player
+        * Server/Client: Display your player number and the one currently playing
+        
+        """
+        H, W = self.screen.get_height(), self.screen.get_width()
+
+        if (GameData.preferences.NetworkMode == GameData.preferences.NetworkModesList.index("Standalone")):
+            # Display the current player on the left of the cards
+            textsurface = self.font_big.render('Joueur ' + str(GameData.current_player + 1) , False, self.PlayerNumberCurrentColor)
+            self.screen.blit(textsurface, (3, H - 88))
+        else:
+            # Display the current player on the left of the cards
+            textsurface = self.font_big.render('Joueur ' + str(GameData.local_player_num + 1) , False, self.PlayerNumberCurrentColor)
+            self.screen.blit(textsurface, (3, H - 88))
+            # In the other cases, we have to add the "playing player" info as it may be different
+            textsurface = self.font_small.render('En cours ' + str(GameData.current_player + 1) , False, self.PlayerNumberCurrentColor)
+            self.screen.blit(textsurface, (3, H - 40))
+
+
+    def show_player_numbers1(self, handset, GameData):
         """ Show players numbers on the left, current player in RED"""
         for i in range(len(handset.players)):
             Color = self.PlayerNumberColor # Standard color
@@ -164,9 +209,31 @@ class GameBoard:
             self.screen.blit(textsurface, (10, 700 + i*30))
         pygame.display.flip() # Update the window content
 
+    def update_backgroundPicture(self, DataGame):
+        """ Fill the screen based on DataGame.ErrorState and DataGame. current_player """
+        # If we are in error state, we should always put the error color
+        if DataGame.ErrorState == DataGame.ErrorStates.index("NotAllowed"):
+            self.screen.blit(self.background_pic_error, (0,0))
+            return
+        # No error. So either we are in turn, or not
+        if (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server")):
+            if DataGame.current_player == 0: # We are server, check if we are player 0
+                self.screen.blit(self.background_pic, (0,0))
+            else:
+                self.screen.blit(self.background_pic_inactive, (0,0))
+            return
+        elif (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Client")): # We are client
+            if DataGame.current_player == DataGame.local_player_num: # We are server, check if we are player 0
+                self.screen.blit(self.background_pic, (0,0))
+            else:
+                self.screen.blit(self.background_pic_inactive, (0,0))
+            return
+        #Default
+        # print ("Player num ", DataGame.local_player_num, " color set as OK")
+        self.screen.blit(self.background_pic, (0,0))
+        return
 
-
-    def update_backgroundColor(self, DataGame):
+    def update_backgroundColor(self, DataGame): # No more used, to be removed TODO
         """ Fill the screen based on DataGame.ErrorState and DataGame. current_player """
         # If we are in error state, we should always put the error color
         if DataGame.ErrorState == DataGame.ErrorStates.index("NotAllowed"):
@@ -190,9 +257,7 @@ class GameBoard:
         return
 
     def update(self, DataGame, handset, TeamWonSet, scores, card_picts, PlayedDeckHand):
-        # Test for debug purposes
-        # self.update_backgroundColor(DataGame)
-        self.screen.blit(self.background_pic, (0,0))
+        self.update_backgroundPicture(DataGame)
 
         PlayedDeckHand.show_played_cards(self.screen, card_picts)
         for i in range(2):
@@ -270,8 +335,8 @@ class GameBoard1:
             # Detect if click on the rectangle
             if self.ChibreRect.collidepoint((x,y)):
                 # Change current player and game mode.
-                DataGame.current_player = (DataGame.current_player + 2) % 4 # Define other player in team as current player
-                DataGame.state = DataGame.GameStates.index("SelAtoutChibre")
+                DataGame.set_current_player((DataGame.current_player + 2) % 4) # Define other player in team as current player
+                DataGame.set_game_state("SelAtoutChibre")
                 DataGame.key_confirmed = False # Invalidate user
         
         if (DataGame.state == DataGame.GameStates.index("Finished")):

@@ -26,8 +26,10 @@ class ClientSocket:
         self.state = self.CliStates.index("Init")
     
     def cli_change_state(self, NewState):
+        if self.state != self.CliStates.index(NewState):
+            print("Client becomes", NewState)
         self.state = self.CliStates.index(NewState)
-        print("Client becomes", NewState)
+        
 
     def client_connect_to_server(self):
         """ Create connection to the server """
@@ -107,15 +109,17 @@ class ClientSocket:
             print ("Cli cli_check_master_and_interpret_command YourTurn")
         if command_str == self.SrvMesHead["CardValid"]: # The server validate the action, nothing to do except changing state
             # Nothing to do, excep changing the state to indicate the error
-            GameData.ErrorState == GameData.ErrorStates.index("NoError")
+            GameData.ErrorState = GameData.ErrorStates.index("NoError")
             # GameData.game_board.BackgroundColor = GameData.game_board.BackgroundColorOk
             print ("Cli cli_check_master_and_interpret_command CardValid")
             self.cli_change_state("WaitServer")
+            ForceExitWait = True
         if command_str == self.SrvMesHead["CardInvalid"]: # The client is now the master for the action
-            GameData.ErrorState == GameData.ErrorStates.index("NotAllowed")
+            GameData.ErrorState = GameData.ErrorStates.index("NotAllowed")
             # GameData.game_board.BackgroundColor = GameData.game_board.BackgroundColorError
             print ("Cli cli_check_master_and_interpret_command CardInvalid")
             self.cli_change_state("WaitServer") # Wait server for updates (the server will give back the turn later)
+            ForceExitWait = True
         if command_str == self.SrvMesHead["Refresh"]: # The client has to update its screen
             # If server asks to refresh, we have to go out of the waiting loop to get the refresh done
             ForceExitWait = True

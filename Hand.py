@@ -534,7 +534,7 @@ class HandSet(Hand):
                 if DataGame.preferences.LockDisplay:
                     DataGame.key_confirmed = False # Invalidate user
                 self.CheckAnnoncesGame(DataGame) # Now that atout has been chose, check all annonces
-                DataGame.state = DataGame.GameStates.index("Play") # Change State to Play
+                DataGame.set_game_state("Play") # Change State to Play
         
         return WasActionDone
 
