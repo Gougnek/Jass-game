@@ -489,7 +489,6 @@ class HandSet(Hand):
         played_deck.check_end_turn_and_move_cards(DataGame, TeamWonSet)
         # Do actions that are only necessary when playing standalone
         if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Standalone"):
-            # TODO:  Set background back to green. Issue: missing access to GameBoard class
             if DataGame.preferences.LockDisplay:
                 DataGame.key_confirmed = False # Invalidate user
 
