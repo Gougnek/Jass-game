@@ -35,6 +35,27 @@ class GameData:
         self.SrvComObject = None # In case of run as server, will containt a ref. to the server connection object for an easier access
         self.ErrorState = self.ErrorStates.index("NoError") # Contain last action status (error or not) to adapt background color
 
+    def is_this_network_mode(self, network_mode):
+        """ Check if the passed "network_mode" value against real mode 
+        
+        Return true if the passed network_mode is the current one.
+        """
+        return self.preferences.NetworkMode == self.preferences.NetworkModesList.index(network_mode)
+    
+    def is_this_game_state(self, game_state):
+        """ Check if the passed "game_state" value against real state 
+        
+        Return true if the passed game_state is the current one.
+        """
+        return self.state == self.GameStates.index(game_state)
+    
+    def is_NOT_this_game_state(self, game_state):
+        """ Check if the passed "game_state" value against real state 
+        
+        Return true if the passed game_state is the current one.
+        """
+        return self.preferences.NetworkMode != self.preferences.GameStates.index(game_state)
+    
     def define_attout(self, atout_id):
         self.atout = atout_id # To define the attout
     
@@ -51,9 +72,12 @@ class GameData:
             print ("Changing game state to " + NewGameState)
         self.state = self.GameStates.index(NewGameState)
 
-    def UpdateIfSetFinished(self, handset):
+    def UpdateIfSetFinished(self, handset, DataGame):
         """ Check if the game (current set) is finished, and modify state in that case
         """
+        if DataGame.is_this_network_mode("Client"):
+            return # Don't do anything if we are client
+
         finished = True
         for i in range (self.nbplayers):
             if len(handset.players[i].cards) > 0:

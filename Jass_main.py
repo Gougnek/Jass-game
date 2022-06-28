@@ -151,7 +151,7 @@ if __name__ == '__main__':
 
     """ GAME INITIAL SETUP IF SERVER OR STANDALONE """
     # The following actions are not needed if we are client mode (data will be provided by the server)
-    if DataGame.preferences.NetworkMode != DataGame.preferences.NetworkModesList.index("Client"):
+    if DataGame.is_this_network_mode("Server") or DataGame.is_this_network_mode("Standalone"):
         # Distribute the cards, set first player and change state
         deck.distribute_cards(handset, DataGame)
         handset.Inital_game_first_player(DataGame)
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     DataGame.game_board = ScreenGame # Store reference to screen game for easier acess in functions
       
     """ SERVER INITIAL SETUP """
-    if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server"):
+    if DataGame.is_this_network_mode("Server"):
         mySrvComToClient = SrvCom.SrvCom() # Create an empty list with future clients connections
         DataGame.local_player_num = 0 # Define the server as the player 0
         mySrvComToClient.server_wait_all_players(3) # Wait tor all connections and store them in a table
@@ -174,6 +174,7 @@ if __name__ == '__main__':
         if DataGame.current_player == 0: # Server is player 0 
             mySrvComToClient.srv_change_state("Master")  # Set state Master 
         else:
+            exit()
             mySrvComToClient.srv_change_state("WaitClient")  # Set state Client 
         pygame.display.set_caption("Jass server")
         # The server must force first update, otherwise nothing will be visible
@@ -181,7 +182,7 @@ if __name__ == '__main__':
         
     
     """ CLIENT INITIAL SETUP """
-    if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Client"):
+    if DataGame.is_this_network_mode("Client"):
         # client_connect_and_test(handset) # Temporary: get the player 0 hand and returns
         myClientSocket = ClientCom.ClientSocket()
         myClientSocket.client_connect_to_server() # Crate connection to server and get the related socket
@@ -199,15 +200,14 @@ if __name__ == '__main__':
     while not Quit:
         """ CALL FUNCTIONS TO WAIT COMMUNICATION WHEN NOT STANDALONE """
         # Manage netowrk operation when CLIENT
-        if (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Client")):
+        if DataGame.is_this_network_mode("Client"):
             if myClientSocket.state == myClientSocket.CliStates.index("WaitServer"): # Only wait on network is the state is to wait
                 # Stop the event loop and wait for receiving messages from the server
                 myClientSocket.ListenAndInterpretCommands(PlayedDeckHand, TeamWonSet, handset, DataGame)
-                Quit = False # To be removed
                 None # Client is freed from waiting command (ready for update)
 
         # Manage network operation when SERVER
-        if (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server")):
+        if DataGame.is_this_network_mode("Server"):
             if mySrvComToClient.SrvState == mySrvComToClient.SrvStates.index("WaitClient"): # The server is supposed to wait on message from the client
                 mySrvComToClient.srv_give_master_and_listen_commands(handset, PlayedDeckHand, TeamWonSet, DataGame) # Wait for action 
             # Verify who is in the turn: Client or server ? Adapt consequently
@@ -225,10 +225,10 @@ if __name__ == '__main__':
 
         """ PERFORM DATA UPDATE AND CALL GRAPHICAL UPDATE """
         # Update infos on handset and state if game is finished
-        DataGame.UpdateIfSetFinished(handset)
+        DataGame.UpdateIfSetFinished(handset, DataGame)
 
         # Check if new game is requested after finished one (state changed)
-        if DataGame.state == DataGame.GameStates.index("Init"):
+        if DataGame.is_this_game_state("Init"):
             deck.ResetForNextSet(DataGame, handset, TeamWonSet)
 
         # Update the screen

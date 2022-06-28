@@ -385,6 +385,30 @@ class Hand(Deck):
         
         return Found, SuitFound, RankFound, ScoreFound
 
+    def AnnoncePseudoCode(self, handset):
+        
+        # For each player
+            # Copy hand
+            # Check each type of annonce in the following order, and remove cards from copied hand:
+                # Check 200 annonce
+                # Check 150 annonce
+                # Check 100 annonce: 4 identical (As, roi, reine, dame, dix)
+                # Check 100 annonce: 5 in a row. Add 1 if atout. 
+                # Check 50 annonce: 4 in a row. Add 1 if atout
+                # Check 20 annonce: 3 in a row. Add 1 if atout
+                # If annonce found, store in a table of the player the infos [ComparisonPoints, RealPoints, RefCArd]
+        
+        # Compare first lines of the 4 tables. The winner is the one with highest comparison points
+        # If equal, player first have priority
+        # This defines the team (0 or 1)
+        # Sum up all RealPoints for each player or the selected team and add to the score
+        # Display score and list of cards with annonce
+
+        # For each player
+            # Check stöckr. Store info in data of player who has stöckr (except if already part of annonce)
+            # In the course of the game, check when playing a card, if player had stockr, if it is the second one
+        return
+
 
     def CheckAnnoncePlayer (self, PlayerNumber, GameData):
         """ Check the best announce of a player

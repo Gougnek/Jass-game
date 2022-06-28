@@ -173,13 +173,13 @@ class GameBoard:
             self.screen.blit(self.background_pic_error, (0,0))
             return
         # No error. So either we are in turn, or not
-        if (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server")):
+        if DataGame.is_this_network_mode("Server"):
             if DataGame.current_player == 0: # We are server, check if we are player 0
                 self.screen.blit(self.background_pic, (0,0))
             else:
                 self.screen.blit(self.background_pic_inactive, (0,0))
             return
-        elif (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Client")): # We are client
+        elif DataGame.is_this_network_mode("Client"): # We are client
             if DataGame.current_player == DataGame.local_player_num: # We are server, check if we are player 0
                 self.screen.blit(self.background_pic, (0,0))
             else:
@@ -203,7 +203,7 @@ class GameBoard:
 
         for i in range(DataGame.nbplayers):
             # Case we are standalone:
-            if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Standalone"):
+            if DataGame.is_this_network_mode("Standalone"):
                 if ((i == DataGame.current_player or DataGame.preferences.ShowAllCards) and ((not DataGame.preferences.LockDisplay) or (DataGame.preferences.LockDisplay and DataGame.key_confirmed))): # Display only cards from player it is the turn and if we are in "Play" status
                     if DataGame.preferences.ShowCardsFan:
                         handset.players[i].show_cards_fan(self, i, handset, card_picts)

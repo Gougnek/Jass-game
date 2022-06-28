@@ -106,7 +106,6 @@ class Deck:
         self.Reset()
         DataGame.Reset()
         # Do other initializations to start new set. Only if standalone or server
-        if (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server")) \
-            or (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Standalone")):
+        if DataGame.is_this_network_mode("Server") or DataGame.is_this_network_mode("Standalone"):
             self.shuffle() # Shuffle the initial cards
             self.distribute_cards(handset, DataGame)
