@@ -49,31 +49,15 @@ class SrvCom:
         PayloadSize: Size of the payload that will follow
         """
         
-        # Conversion by bytes() on a string: Provide a bytes stream, of same size than string (if input is string)
-        # Conversion by bytes() on an int: Probably not possible
-        # Conversion by pickle.dumps on a bytes stream: Creates a big stream (2 bytes stream becomes a 17 bytes stream)
-        # Conversion by pickle.dumps on an int of value 100 creates a 5 bytes stream
-        
         # Prepare the command
         Command = self.SrvMesHead[HeaderRef] # Get header in 2 letters
         print ('Send Command: ', Command, ' to client: ', ConID)
         bytes_command = bytes(str(Command), 'utf-8')
-        # length = len(bytes_command)
-        # print(f'Length of bytes_command is {length}.')
         bytes_command_pickle = pickle.dumps(bytes_command)
-        # length = len(bytes_command_pickle)
-        # print(f'Length of bytes_command_pickle is {length}.')
-        # length = len(str_command)
-        # print(f'Length of converted_command is {length}.')
-        # print ('converted_command:', str_command)
-        # Send the 2 bytes "bytes_command", which is a byte stream of the command
         self.conn[ConID].send(bytes_command)
-        
         
         # Prepare the paylaod size
         PayloadSizeStringBytes = bytes(format(PayloadSize, '05d'), 'utf-8') # Converts Payload Size in string of 5 bytes
-        # length = len(PayloadSizeString)
-        # print(f'Length of PayloadSizeString is {length}.')
         # Send the 5 bytes of "PayloadSizeString", which is a string of 5 characters
         self.conn[ConID].send(PayloadSizeStringBytes)
         return    
@@ -136,8 +120,6 @@ class SrvCom:
     
     def srv_send_hands(self, handset, PlayedDeckHand, TeamWonSet, DataGame):
         """ This function will send the hand of each player connected remotely """
-        # self.srv_send_game_data(DataGame)
-        # self.srv_send_other_cards(PlayedDeckHand, TeamWonSet)
         
         for idx in range(len(self.conn)):
             # Assumption 1: Server is player 0, and connected players are from 1 to max players
@@ -226,7 +208,6 @@ class SrvCom:
         # We don't know what happened, but let's resend all data to clients
         self.srv_send_all_data(Handset, DataGame, TeamWonSet, PlayedDeck)
          
-                 
 
     def server_wait_all_players(self, NbPlayers):
         """ This function will wait that all players (3 expected) are connected to it before exiting

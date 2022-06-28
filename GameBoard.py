@@ -17,11 +17,6 @@ class GameBoard:
         size = (Width, Height)
         self.screen = pygame.display.set_mode(size)
 
-        # self.Color = (0, 80, 0) # Dark Green by default
-        """ self.BackgroundColor = (0, 80, 0) # This is the variable which will contain current background color to display at next refresh
-        self.BackgroundColorOk = (0, 80, 0) # Dark Green
-        self.BackgroundColorYourTurn = (0, 40, 0) # Very Dark Green. Usefull only in client-server mode
-        self.BackgroundColorError = (100, 0, 0) # Dark Red when error occus """
         self.ChibreColor = (180, 180, 180) # Color of the Chybre name
         self.ScoresColor = (200, 100, 90) # Color of the scores
         self.PlayerNumberColor = (250, 250, 250) # Color of text giving player number
@@ -191,7 +186,6 @@ class GameBoard:
                 self.screen.blit(self.background_pic_inactive, (0,0))
             return
         #Default
-        # print ("Player num ", DataGame.local_player_num, " color set as OK")
         self.screen.blit(self.background_pic, (0,0))
         return
 

@@ -4,8 +4,6 @@
     GameData contains all information necessary during the game, with methods to update them
 """
 
-# from asyncio.windows_events import NULL
-# from asyncio.windows_events import NULL
 from Preferences import Preferences
 
 class GameData:
