@@ -52,6 +52,8 @@ class SrvCom:
         # Prepare the command
         Command = self.SrvMesHead[HeaderRef] # Get header in 2 letters
         print ('Send Command: ', Command, ' to client: ', ConID)
+        if (ConID < 0):
+            print ('ERROR')
         bytes_command = bytes(str(Command), 'utf-8')
         bytes_command_pickle = pickle.dumps(bytes_command)
         self.conn[ConID].send(bytes_command)
@@ -158,13 +160,13 @@ class SrvCom:
         # Store Current Player value for the execution (in case it changes during the operations)
         FctCurPlayer = DataGame.current_player
         # Execute the operations as if we were in standalone mode
-        if DataGame.state == DataGame.GameStates.index("SelAtout") or DataGame.state == DataGame.GameStates.index("SelAtoutChibre"):
+        if DataGame.is_this_game_state("SelAtout") or DataGame.is_this_game_state("SelAtoutChibre"):
             DataGame.atout = Handset.players[FctCurPlayer].cards[CardPos].suit # Store the chosen atout
             DataGame.set_game_state("Play") # Change the server state to Play
             self.srv_send_game_data(DataGame) # Send update of the data game (including atout) to everybody
             self.srv_send_refresh() # To force clients refresh
-        elif DataGame.state == DataGame.GameStates.index("Play"):
-            if Handset.action_card_selected(FctCurPlayer, CardPos, DataGame, PlayedDeck, DataGame.game_board, TeamWonSet):
+        elif DataGame.is_this_game_state("Play"):
+            if Handset.action_card_selected(FctCurPlayer, CardPos, DataGame, PlayedDeck, TeamWonSet): # Note: action_card_selected function will update player number
                 # The action was done successfully
                 self.srv_send_card_valid(FctCurPlayer)
             else:
@@ -183,6 +185,7 @@ class SrvCom:
             return
         command_str = str(data, 'UTF-8') # Convert from bytes received to string for comparison
         
+        print ('Received Command: ', command_str, ' from client: ', CurrentPlayer - 1)
         # Read the size of the message
         Size = self.conn[CurrentPlayer - 1].recv(5) # Size is coded in string on 5 characters
         SizeToGet = int(Size)
@@ -191,6 +194,7 @@ class SrvCom:
             if command_str == self.CliMesHead["CardSelected"]:
                 # Card position is normally coded on a 2-chars string
                 CardPos = int(str(Payload, 'UTF-8')) # Convert from bytes received to integer
+                print ("server: card select is position", str(CardPos))
                 self.srv_execute_card_selected_command(TeamWonSet, CardPos, Handset, PlayedDeck, DataGame) # Execute action (including feed-back to the client)
 
 

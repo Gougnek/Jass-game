@@ -75,7 +75,7 @@ def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand):
             if player == -1: # Sanity check if the use clics on something valid
                 continue # Stop here and go back to the top of the loop
             # If Sandalone or server: do the action on the card (can be selection of atout or playing it)
-            handset.action_card_selected(player, pos_card, DataGame, PlayedDeckHand, DataGame.game_board, TeamWonSet)
+            handset.action_card_selected(player, pos_card, DataGame, PlayedDeckHand, TeamWonSet)
             # Make it simple: if we are server, always request clients to update when there was a user clic.
             if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server"):     
                 DataGame.SrvComObject.srv_send_all_data(handset, DataGame, TeamWonSet, PlayedDeckHand)         
@@ -174,7 +174,6 @@ if __name__ == '__main__':
         if DataGame.current_player == 0: # Server is player 0 
             mySrvComToClient.srv_change_state("Master")  # Set state Master 
         else:
-            exit()
             mySrvComToClient.srv_change_state("WaitClient")  # Set state Client 
         pygame.display.set_caption("Jass server")
         # The server must force first update, otherwise nothing will be visible
@@ -214,9 +213,9 @@ if __name__ == '__main__':
             if DataGame.current_player == 0: # By default, server is always player 0
                 if mySrvComToClient.SrvState != mySrvComToClient.SrvStates.index("Master"):
                     mySrvComToClient.srv_change_state("Master")  # Set state Master  
-            else: # Server is not the current player
+            # else: # Server is not the current player
                 # Send YourTurn to client in charge and wait for message
-                mySrvComToClient.srv_give_master_and_listen_commands(handset, PlayedDeckHand, TeamWonSet, DataGame) # Wait for action 
+            #    mySrvComToClient.srv_give_master_and_listen_commands(handset, PlayedDeckHand, TeamWonSet, DataGame) # Wait for action 
                  
         
         """ MANAGE USER ACTIONS """
@@ -233,4 +232,5 @@ if __name__ == '__main__':
 
         # Update the screen
         ScreenGame.update(DataGame, handset, TeamWonSet, scores, card_picts, PlayedDeckHand)
+        
     

@@ -510,13 +510,13 @@ class HandSet(Hand):
         """ Get the card at pos_card from the player hand, and mot it to the played deck. Potentially also moves the cards to the TeamWonSet """
         myCard = self.players[DataGame.current_player].pop_card(pos_card)
         played_deck.add_card(myCard)
-        played_deck.check_end_turn_and_move_cards(DataGame, TeamWonSet)
+        played_deck.check_end_turn_and_move_cards(DataGame, TeamWonSet) # This function will change current player.
         # Do actions that are only necessary when playing standalone
         if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Standalone"):
             if DataGame.preferences.LockDisplay:
                 DataGame.key_confirmed = False # Invalidate user
 
-    def action_card_selected(self, player, pos_card, DataGame, played_deck, ScreenGame, TeamWonSet):
+    def action_card_selected(self, player, pos_card, DataGame, played_deck, TeamWonSet):
         """ If found, select the atout or move card depending on game state, or send info to server
 
         Return: True if everything could be executed. False if for any reason is was not possible to execute the action
@@ -524,6 +524,7 @@ class HandSet(Hand):
         Note: The return value is used mainly in server mode to say the call function that the action was refused
         """
         WasActionDone = False # Flag to know at the end if we could use the selected card and execute the action, or not.
+        PlayerNumerAtStart = DataGame.current_player # Store the player at the begining because it may change further
 
         if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Client"):
             Con = DataGame.cli_connection
@@ -531,20 +532,23 @@ class HandSet(Hand):
             Con.state = Con.CliStates.index("WaitServer") # Change state so that the client will then wait for server feed-back
             return True # Stop here: we did the job by informing the server
         else:
-            if DataGame.state == DataGame.GameStates.index("Play"): # We are in play mode, so select atout or chybre
+            if DataGame.is_this_game_state("Play"): # We are in play mode, so select atout or chibre
                 if self.IsCardAllowedToBePlayed(player, pos_card, played_deck, DataGame): # Check that card is allowed in the context
-                    self.action_play_card(pos_card, played_deck, TeamWonSet, DataGame)
-                    if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Standalone"):
+                    self.action_play_card(pos_card, played_deck, TeamWonSet, DataGame)  # This function will change current player.
+                    if DataGame.is_this_network_mode("Standalone") or DataGame.is_this_network_mode("Server"):
                         DataGame.ErrorState = DataGame.ErrorStates.index("NoError")
-                        # ScreenGame.BackgroundColor = ScreenGame.BackgroundColorOk
                         print ("Hand action_card_selected OK")
+                        # Now either the new playe is the server (So need to be master), or a client (need to go WaitClient)
+                        if DataGame.is_this_network_mode("Server"):
+                            if DataGame.current_player == 0: # This is the new player as it has been updated in action_play_card
+                                DataGame.SrvComObject.srv_change_state("Master")
+                            else:
+                                DataGame.SrvComObject.srv_change_state("WaitClient")
                     WasActionDone = True
                 else:
                     # If se are in standalone mode OR server mode, AND player 0, add some graphical effect to show that card is refused
-                    if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Standalone") or \
-                                (DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server") and DataGame.current_player == 0):
+                    if DataGame.is_this_network_mode("Standalone") or (DataGame.is_this_network_mode("Server") and DataGame.current_player == 0):
                         DataGame.ErrorState = DataGame.ErrorStates.index("NotAllowed")
-                        # ScreenGame.BackgroundColor = ScreenGame.BackgroundColorError # RED
                         print ("Hand action_card_selected Error")
                     WasActionDone = False
             
@@ -556,8 +560,10 @@ class HandSet(Hand):
                     DataGame.current_player = (DataGame.current_player + 2) % 4 # Define other player in team as current player
                 if DataGame.preferences.LockDisplay:
                     DataGame.key_confirmed = False # Invalidate user
-                self.CheckAnnoncesGame(DataGame) # Now that atout has been chose, check all annonces
+                self.CheckAnnoncesGame(DataGame) # Now that atout has been chosen, check all annonces
                 DataGame.set_game_state("Play") # Change State to Play
+        
+        # If the action was done, we have to update the game state if we are the server: it means
         
         return WasActionDone
 
