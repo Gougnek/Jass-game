@@ -13,7 +13,7 @@ class WelcomeInfosToSend:
         self.PlayerNumber = PlayerNumber # Current player
 
 class DataGameToSend:
-    """ Class containing only data to be sent to clients about the game"""
+    """ Class containing only data to be sent to clients about the game """
     def __init__(self, current_player, atout, nb_players, latest_winner):
         self.current_player = current_player # Current player
         self.atout = atout # Atout of the game

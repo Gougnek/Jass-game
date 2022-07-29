@@ -68,7 +68,7 @@ class Card:
     rank_annonces = ["6", "7", "8", "9", "10", "Reine", "Roi", "As",  "9", "Valet"] # Order of points for 4cards annonces
     rank_annonces_points = [0, 0, 0, 0, 100, 100, 100, 100,  150, 200] # Order of points for 4-cards annonces
     rank_names_file = ["six", "seven", "eight", "nine", "ten", "jack", "queen", "king", "ace"] # Names used to find the file on the disk to load the picture
-    rank_points = [0, 0, 0, 0, 10, 2, 3, 4, 11] # Points of the cards execept atout
+    rank_points = [0, 0, 0, 0, 10, 2, 3, 4, 11] # Points of the cards except atout
     rank_points_atout = [0, 0, 0, 14, 10, 20, 3, 4, 11] # Point of the atout cards
     
     # Following lines are tenative to replace some lists by dictionaries
