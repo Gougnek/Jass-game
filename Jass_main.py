@@ -36,7 +36,7 @@ class Scores:
             return
 
         for TeamSetID in range(2):
-            Score = PreviousScore = 0
+            Score = PreviousScore = self.Team[TeamSetID][0] # Start with existing score (may not be 0 if there were annonces)
             # Check special case: In case the team has ALL cards
             if len(SetTeamWon.players[TeamSetID].cards) == 36:
                 Score = 257
@@ -148,6 +148,7 @@ if __name__ == '__main__':
 
     # Create storage for scores
     scores = Scores(2)
+    DataGame.Scores = scores # Store direct linke to scores in DataGame
 
     """ GAME INITIAL SETUP IF SERVER OR STANDALONE """
     # The following actions are not needed if we are client mode (data will be provided by the server)

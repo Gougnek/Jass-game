@@ -33,6 +33,7 @@ class GameData:
         self.cli_connection = -1 # For an easier access, will contain the reference to connection when in client mode
         self.game_board = None # Will contain a reference to the GameBoard object for an easier access
         self.SrvComObject = None # In case of run as server, will containt a ref. to the server connection object for an easier access
+        self.Scores = None # Will be a pointer on the score object
         self.ErrorState = self.ErrorStates.index("NoError") # Contain last action status (error or not) to adapt background color
 
     def is_this_network_mode(self, network_mode):
