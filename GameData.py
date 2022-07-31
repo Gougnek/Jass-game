@@ -36,6 +36,14 @@ class GameData:
         self.Scores = None # Will be a pointer on the score object
         self.ErrorState = self.ErrorStates.index("NoError") # Contain last action status (error or not) to adapt background color
 
+        # Link to other objects to allow full debug here
+        self.debug_GameBoard = None
+        self.debug_handset = None
+        self.debug_TeamWonSet = None
+        self.scores = None
+        self.card_picts = None
+        self.PlayedDeckHand = None
+
     def is_this_network_mode(self, network_mode):
         """ Check if the passed "network_mode" value against real mode 
         
@@ -110,4 +118,9 @@ class GameData:
         self.current_first_player_set = self.current_turn_first_player
         self.current_player = self.current_turn_first_player # Current player in turn
         self.set_game_state("SelAtout") # First stage
+    
+    def DebugDisplayCards(self):
+        """ Will display all cards on the screen wherever in the code for debug purposes"""
+
+
         

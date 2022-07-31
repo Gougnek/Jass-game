@@ -162,6 +162,7 @@ if __name__ == '__main__':
     # Construct an object to display
     ScreenGame = GameBoard(Height = 648, Width = 1152)
     DataGame.game_board = ScreenGame # Store reference to screen game for easier acess in functions
+    
       
     """ SERVER INITIAL SETUP """
     if DataGame.is_this_network_mode("Server"):
@@ -196,6 +197,14 @@ if __name__ == '__main__':
     
     Quit = False
     
+    # Create links for debug purposes
+    DataGame.debug_GameBoard = ScreenGame
+    DataGame.debug_handset = handset
+    DataGame.debug_TeamWonSet = TeamWonSet
+    DataGame.scores = scores
+    DataGame.card_picts = card_picts
+    DataGame.PlayedDeckHand = PlayedDeckHand
+
     """ EVENTS LOOP """
     while not Quit:
         """ CALL FUNCTIONS TO WAIT COMMUNICATION WHEN NOT STANDALONE """

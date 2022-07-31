@@ -189,8 +189,25 @@ class GameBoard:
         self.screen.blit(self.background_pic, (0,0))
         return
 
+    def update_show_full_game(self, DataGame, handset, TeamWonSet, scores, card_picts, PlayedDeckHand):
+        """ Debug function to show all cards on the screen"""
+        self.update_backgroundPicture(DataGame)
+        self.show_atout(DataGame, self) # Display the selected atout
+        for i in range(DataGame.nbplayers):
+            handset.players[i].show_cards_debug(self, i, card_picts)
+        
+        pygame.display.flip() # Update the window content
+        self.clock.tick(10)
+        return
 
     def update(self, DataGame, handset, TeamWonSet, scores, card_picts, PlayedDeckHand):
+        # Special case: When we want to debug annonce, display all the game
+        """ if DataGame.debug_annonce:
+            self.update_show_full_game(DataGame, handset, TeamWonSet, scores, card_picts, PlayedDeckHand)
+            pygame.display.flip() # Update the window content
+            self.clock.tick(10)
+            return """
+        
         self.update_backgroundPicture(DataGame)
 
         PlayedDeckHand.show_played_cards(self.screen, card_picts)

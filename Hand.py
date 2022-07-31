@@ -81,6 +81,19 @@ class Hand(Deck):
             # Rotate the cards by 13° each around a point  in left-right middle, but below the card, and display it
             Handset.players[PlayerNumber].DisplayRotatedCardPlayer(gameBoard, surface, (i-4)*13, [90//2, 135], pygame.math.Vector2(0, -135//2), PlayerNumber)
 
+    def show_cards_debug(self, gameBoard, PlayerNumber, card_picts):
+        """Shows cards on the screen on background picture for debug purpose
+        
+        Note: We assume that the player for which to show the cards
+        Card is 136 high, 91 wide. Background size is supposed to be 1152x648
+
+        """
+        x,y = 0, 0
+        NbCards = len(self.cards)
+        for i in range(NbCards):
+            gameBoard.screen.blit(card_picts.GetCardPicture(self.cards[i].suit, self.cards[i].rank), (x,PlayerNumber*136))
+            x=x+91
+
     def show_cards(self, gameBoard, PlayerNumber, card_picts):
         """Shows cards on the screen on background picture
         
@@ -426,7 +439,7 @@ class Hand(Deck):
             self.pop_card(StartPos) # Always use "StarPos" because each time we remove a card, all next ones are going one position less
 
 
-    def Check4SameRankNew(self, DataGame, SearchedScore):
+    def Check4SameRankNew(self, DataGame, SearchedScore, player):
         """ Checks if a 4 of same rank (from 9 and above) exists. If found, remove the cards from the hand
 
         Args:
@@ -453,8 +466,8 @@ class Hand(Deck):
         nb_removed_cards = 0 # Will contain the number of cards removed from the hand to correct the position
         # Ideally: Re-sort cards by Rank only. Create temporary hand for doing that. Cannot use copy because cards contains pictures
         self.sortbyrank() # The list is now sorted by rank only (temporarily)
-        
-        for i_orig in range(0, len(self.cards)):
+        max = len(self.cards)
+        for i_orig in range(0, max):
             # Correct the i_orig in case some cards were removed
             i = i_orig - nb_removed_cards
             # Check that Suite is same and range higher
@@ -463,27 +476,26 @@ class Hand(Deck):
             if self.cards[i].rank == PreviousRank:
                 # Card i is same rank that previous, need to update counter
                 CounterCards = CounterCards + 1 # We have one card more in the row
-            else: # First card of a new potential same rank (of new after found one previously). Store potential previous same rank values and then reset previous data
                 if CounterCards == 4: # We already found 4 cards of same rank
                     # Calculate score of cards found.
                     TmpScore = card.rank_annonces_points[card.rank_annonces.index(card.rank_names[card.rank])]
                     if TmpScore == SearchedScore: # This is the score we are looking for
                         self.annonces.append([SearchedScore, SearchedScore, card.rank])
-                        print ("Annonce 4-cards same rank found for a player " + " in rank " + str(FakeCard.rank_names[card.rank])) 
-                        self.RemoveCardsFromAnnonceNew (i-CounterCards, i-1)
+                        print ("Annonce 4-cards same rank found for player " + str(player)+ " in rank " + str(FakeCard.rank_names[card.rank])) 
+                        self.RemoveCardsFromAnnonceNew (i-CounterCards+1, i)
                         nb_removed_cards = nb_removed_cards + CounterCards # Store the number of removed card to correct the index
                         Found = True
                         
                     CounterCards = 0 # Reset counter
-                else: # Just store the found rank
+            else: # Just store the found rank
                     PreviousRank = card.rank
                     CounterCards = 1 # We have one card in the row
-        
+
         print ("End of function Check4SameRankNew, result: ", str(Found))
         return Found
 
 
-    def CheckCardsInarowNew(self, DataGame, SearchedScore):
+    def CheckCardsInarowNew(self, DataGame, SearchedScore, player):
         """ Checks if cards -in-a-row or exist, for the given announce value
         
         Args:
@@ -505,8 +517,8 @@ class Hand(Deck):
         CounterCards = 0 # Will count how many cards are in a row
         PreviousRank, PreviousSuit = -1, -1 # Init with impossible values
         nb_removed_cards = 0 # Will contain the number of cards removed from the hand to correct the position
-
-        for i_orig in range(0, len(self.cards)):
+        max = len(self.cards)
+        for i_orig in range(0, max):
             # Correct the i_orig in case some cards were removed
             i = i_orig - nb_removed_cards
             # Check that Suite is same and range higher by one
@@ -526,7 +538,7 @@ class Hand(Deck):
                         else:
                             ComparisonPoints = SearchedScore # When it is not atout
                         self.annonces.append([ComparisonPoints, SearchedScore, self.cards[i-1].rank]) # Happen annonce to the list of the player
-                        print ("Annonce in-a-row found for score " + str(SearchedScore) + " in rank " + str(FakeCard.rank_names[self.cards[i - 1].rank])) 
+                        print ("Annonce in-a-row found for score " + str(SearchedScore) + " in rank " + str(FakeCard.rank_names[self.cards[i - 1].rank]) + " for player " + str(player)) 
                         self.RemoveCardsFromAnnonceNew (i-CounterCards, i-1) # Remove cards used for the annonce
                         nb_removed_cards = nb_removed_cards + CounterCards # Store the number of removed card to correct the index
                          
@@ -545,8 +557,9 @@ class Hand(Deck):
                     ComparisonPoints = SearchedScore + 1 # Add 1 to the comparison score for future sorting
                 else:
                     ComparisonPoints = SearchedScore # When it is not atout
-                self.annonces.append([ComparisonPoints, SearchedScore, self.cards[i].rank]) # Happen annonce to the list of the player
-                self.RemoveCardsFromAnnonceNew (i-CounterCards, i-1) # Remove cards used for the annonce
+                self.annonces.append([ComparisonPoints, SearchedScore, self.cards[i-1].rank]) # Happen annonce to the list of the player
+                print ("Annonce in-a-row found for score " + str(SearchedScore) + " in rank " + str(FakeCard.rank_names[self.cards[i].rank]) + " for player " + str(player)) 
+                self.RemoveCardsFromAnnonceNew (i-CounterCards+1, i) # Remove cards used for the annonce
         return
 
 class HandSet(Hand):
@@ -680,6 +693,8 @@ class HandSet(Hand):
                     DataGame.current_player = (DataGame.current_player + 2) % 4 # Define other player in team as current player
                 if DataGame.preferences.LockDisplay:
                     DataGame.key_confirmed = False # Invalidate user
+
+                DataGame.debug_GameBoard.update_show_full_game(DataGame, DataGame.debug_handset, DataGame.debug_TeamWonSet, DataGame.scores, DataGame.card_picts, DataGame.PlayedDeckHand)
                 self.AnnoncesFullCheck(DataGame, DataGame.Scores)
                 # self.CheckAnnoncesGame(DataGame) # Now that atout has been chosen, check all annonces
                 DataGame.set_game_state("Play") # Change State to Play
@@ -775,13 +790,13 @@ class HandSet(Hand):
             LocHandset.add_Hand(tmpHand) # Add the copied hand to the handset
         
         # Check all kind of annonce, in the order of value
-        for i in range (0,4): # Loop on the players. TODO: Use variable
-            LocHandset.players[i].Check4SameRankNew(DataGame, 200) # Search for 200 annonce
-            LocHandset.players[i].Check4SameRankNew(DataGame, 150) # Search for 150 annonce
-            LocHandset.players[i].Check4SameRankNew(DataGame, 100) # Search for  100 annonce: 4 identical (As, roi, reine, dame, dix)
-            LocHandset.players[i].CheckCardsInarowNew(DataGame, 100) # Check 100 annonce: 5 or more in a row. Add 1 if atout.
-            LocHandset.players[i].CheckCardsInarowNew(DataGame, 50) # Check 50 annonce: 4 in a row. Add 1 if atout
-            LocHandset.players[i].CheckCardsInarowNew(DataGame, 20) # Check 20 annonce: 3 in a row. Add 1 if atout
+        for player in range (0,4): # Loop on the players. TODO: Use variable
+            LocHandset.players[player].Check4SameRankNew(DataGame, 200, player) # Search for 200 annonce
+            LocHandset.players[player].Check4SameRankNew(DataGame, 150, player) # Search for 150 annonce
+            LocHandset.players[player].Check4SameRankNew(DataGame, 100, player) # Search for  100 annonce: 4 identical (As, roi, reine, dame, dix)
+            LocHandset.players[player].CheckCardsInarowNew(DataGame, 100, player) # Check 100 annonce: 5 or more in a row. Add 1 if atout.
+            LocHandset.players[player].CheckCardsInarowNew(DataGame, 50, player) # Check 50 annonce: 4 in a row. Add 1 if atout
+            LocHandset.players[player].CheckCardsInarowNew(DataGame, 20, player) # Check 20 annonce: 3 in a row. Add 1 if atout
 
         BestPlayer = LocHandset.GetPlayerWithBestAnnonce(DataGame) # Get the player number with best Annonce. It can be -1 if no annonce found at all
         if (BestPlayer != -1): # Sanity check
