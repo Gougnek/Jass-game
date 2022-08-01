@@ -96,7 +96,7 @@ class Deck:
         except:
             print("cards/Back/back1.png not found.")
 
-    def ResetForNextSet(self, DataGame, handset, TeamWonSet):
+    def ResetForNextSet(self, DataGame, handset, TeamWonSet, Scores):
         """ Function to call to reset everything, ready for new set
         This will keep data like scores
         """
@@ -105,6 +105,7 @@ class Deck:
         TeamWonSet.Reset(DataGame)
         self.Reset()
         DataGame.Reset()
+        Scores.ResetSetScores()
         # Do other initializations to start new set. Only if standalone or server
         if DataGame.is_this_network_mode("Server") or DataGame.is_this_network_mode("Standalone"):
             self.shuffle() # Shuffle the initial cards

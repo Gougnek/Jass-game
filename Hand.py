@@ -16,6 +16,7 @@ class Hand(Deck):
         self.label = label
         self.KeyCode = ' ' # Key code that the user will use to allow the display of his deck
         self.annonces = [] # Table to store found annonces during the annonce check. Each position contains a list: [ComparisonPoints, RealPoints, RefCardRank]
+        self.stockr = False # Will be true if the Stöckr is found for this player
 
     def sort(self):
         """Sorts the cards in ascending order, firt suit, then rank."""
@@ -163,36 +164,6 @@ class Hand(Deck):
                 # Display the background of a card
                 gameBoard.screen.blit(card_picts.background_picture, (x-20,y))
 
-    def show_won_cards1(self, gameBoard, deck, team_id, DataGame, card_picts):
-        """Shows cards won by the different teams
-        
-        team_id: 0 or 1 depending on the team to display
-        """
-        x, y = 10*91, 4*135 + 10 + team_id*135
-
-        #Display name of team before the deck
-        textsurface = gameBoard.font.render('Equipe ' + str(team_id + 1), False, (255, 255, 255))
-        gameBoard.screen.blit(textsurface, (x - 150, y + 40))
-
-        # Calculate the number of played cards
-        NbCards = len(self.cards)
-        if NbCards > 4:
-            # Display first the background of a card
-            gameBoard.screen.blit(card_picts.background_picture, (x-20,y))
-            FirstCard = NbCards -4
-        else:
-            FirstCard = 0
-        if DataGame.latest_winner % 2 == team_id: # Only display cards won from team who won the latest
-            for i in range(FirstCard, NbCards):
-                mypicture = card_picts.GetCardPicture(self.cards[i].suit, self.cards[i].rank)
-                gameBoard.screen.blit(mypicture, (x,y))
-                x=x+45 # move right half of a card
-        else:
-            # For the other team, show only a background if cards have already been won
-            if NbCards > 0:
-                # Display the background of a card
-                gameBoard.screen.blit(card_picts.background_picture, (x-20,y))
-
     def pop_card(self, i=-1):
         """Removes and returns a card from the deck of the player.
 
@@ -265,169 +236,25 @@ class Hand(Deck):
         else:
             DataGame.SetNextPlayer() # Change player number for next turn
 
-    def CheckBetterRow(self, fRowSize, fSuit, fRank, i_card, nRowSize,  DataGame):
-        """ Compare found row to existing stored and tell if better. Usually used to check if cards in a row with points exist
-
-        variables starting with "f" are already found rows data
-        Variables starting with "n" are new found rows data
-        fRowSize: Highest row found until now (usefull to check that new row is longer)
-        fSuit: Suit of already found row (not used for the moment, but for improvement to check for example if this was the atout)
-        fRank: Max rank of already found row (not used for the moment, but for improvement to check for example if this was the atout)
-        i_card: index + 1 of the position of the card to check (+ 1 because we check the value of the row AFTER that the row is finished, so we are 1 card further)
-        nRowSize: Number of cards found until now (Ex: if 3 cards are in a row, nRowSize will be 3)
-
-        Returns True if the found row is better than existing one
-        """
-        Found = False
-        nSuit, nRank = -1, -1 # Initiate to dummy values
-        # 1. Check if we had at least 3 cards found
-                # 2. If yes, check that the highest card (i-1) is better than any previously found suite
-                    # If yes, store current suite found (note: The suite may be bigger, we will see that at next iteration)
-                    # If No, Don't store anything
-        if nRowSize >= 3:
-            if nRowSize > fRowSize: # If the new row is longer than any previous one, store infos
-                Found = True
-                nRank = self.cards[i_card-1].rank
-                nSuit = self.cards[i_card-1].suit
-            elif nRowSize == fRowSize: # In that case, store only if new row is atout
-                if self.cards[i_card-1].suit == DataGame.atout:
-                    Found = True
-                    nRank = self.cards[i_card-1].rank
-                    nSuit = self.cards[i_card-1].suit
-
-        return Found, nRowSize, nSuit, nRank
-
-    def CheckCardsInarow(self, DataGame):
-        """ Checks if a 3-in-a-row or more exists
+    def check_stockr(self, DataGame, player):
+        """ Checks if the player has the Stöckr and store this information in the hand parameters of the player
 
         Args:
-            Self (class Hand): Hand of the player to check
+            Self (class Hand): copied hand of the player to check, or remaining after previous checks
             DataGAme (class DataGame): Information about the game
-            
-        Output:
-            * Found True if found
-            * fRowSize, fSuit, fRank found (row-size found, suit, followed by rank or highest card)
-            
-        Prerequisite: Cards in the hand ordered by suit and then rank
+            Player: Player number (for debug / print purposes)
         """
-        Found = False # Will be true if the searched anonce is found
-        fRowSize = -1 # Will contain the length of the row found
-        fSuit = -1 # Will contain the suit ID if annonce found
-        fRank = -1 # Will contain rank. If several, priority to atout. Otherwise, don't care
-        CounterCards = 0 # Will count how many cards are in a row
-        PreviousRank, PreviousSuit = -1, -1 # Init with impossible values
-        for i in range(len(self.cards)):
-            # Check that Suite is same and range higher by one
-            if self.cards[i].suit == PreviousSuit and self.cards[i].rank == PreviousRank + 1:
-                # Card i is part of a row, need to update counter
-                CounterCards = CounterCards + 1 # We have one card more in the row
-                PreviousSuit = self.cards[i].suit
-                PreviousRank = self.cards[i].rank
-            else: # Call function to compare new row (whatever size) which will return if it is better than existing, with associated data
-                tmp_Found, tmp_nRowSize, tmp_nSuit, tmp_nRank =  self.CheckBetterRow(fRowSize, fSuit, fRank, i, CounterCards,  DataGame)
-                if tmp_Found: # New better row found. Store all data related to that new row
-                    Found = True
-                    fRank = tmp_nRank
-                    fSuit = tmp_nSuit
-                    fRowSize = tmp_nRowSize
-                    # Nothing to do in else here: we have more than 3 cards, but annonce is lower value than existing
-                # No else needed: If we have less than 3 cards, no suit can exist
-
-                # We have finished detecting new winning row, we have more than 3 cards, but value is lower ==> nothing to do
-                # In all cases, at the end we store current suit and rank (new card for potential new suite)
-                PreviousSuit = self.cards[i].suit
-                PreviousRank = self.cards[i].rank
-                CounterCards = 1 # Reset counter to 1 (we have 1 card in the suit)
-
-        # We are just out of the for loop, maybe the current found row has to be counted
-        tmp_Found, tmp_nRowSize, tmp_nSuit, tmp_nRank =  self.CheckBetterRow(fRowSize, fSuit, fRank, i, CounterCards,  DataGame)
-        if tmp_Found: # New better row found. Store all data related to that new row
-            Found = True
-            fRank = tmp_nRank
-            fSuit = tmp_nSuit
-            fRowSize = tmp_nRowSize
+        CounterFound = 0
+        for i in range(0, len(self.cards)):
+            # Search for roi or reine of atout
+            if ((self.cards[i].rank == 6) or (self.cards[i].rank == 7)) and (self.cards[i].suit == DataGame.atout):
+                CounterFound += 1
         
-        return Found, fRowSize, fSuit, fRank
-
-    def Check4SameRank(self, DataGame):
-        """ Checks if a 4 of same rank (from 9 and above) exists
-
-        Args:
-            Self (class Hand): Hand of the player to check
-            DataGAme (class DataGame): Information about the game
-            
-        Output:
-            * Found True if found
-            * SuitFound, RankFound, Score found (suit, followed by rank)
-            
-        Output is (when exists) a 4-cards with maximum annonce value. If several exist, the bigger rank based on rank_annonces is used
-        """
-        Found = False # Will be true if the searched anonce is found
-        SuitFound = -1 # Will contain MaxRow if annonce found
-        RankFound = -1 # Will contain rank. If several, priority to atout. Otherwise, don't care
-        ScoreFound = 0 # Will containt the score of the best 4-cards set found
-        CurrentMaxScore = 0 # Will contain maximum score found
-        CounterCards = 0 # Will count how many cards are in a row
-        PreviousRank, PreviousSuit = -1, -1 # Init with impossible values
-        
-        # Ideally: Re-sort cards by Rank only. Create temporary hand for doing that. Cannot use copy because cards contains pictures
-        self.sortbyrank() # The list is now sorted by rank only (temporarily)
-        
-        for i in range(len(self.cards)):
-            # Check that Suite is same and range higher
-            pcard = self.cards[i-1] # To simplify call on previous card studied
-            card = self.cards[i] # To simplify call on current card studied
-            if self.cards[i].rank == PreviousRank:
-                # Card i is same rank that previous, need to update counter
-                CounterCards = CounterCards + 1 # We have one card more in the row
-            else: # First card of a new potential same rank (of new after found one previously). Store potential previous same rank values and then reset previous data
-                if CounterCards == 4: # We already found 4 cards of same rank
-                    # Calculate score of cards found.
-                    TmpScore = card.rank_annonces_points[card.rank_annonces.index(card.rank_names[card.rank])]
-                    if TmpScore > ScoreFound or (TmpScore >= ScoreFound and card.suit == DataGame.atout): # Better 4-cards found, store the related infos. If atout and same score, take the atout one instead of previous
-                        ScoreFound = TmpScore
-                        RankFound = card.rank
-                        SuiteFound = card.suit
-                        Found = True
-                    CounterCards = 0 # Reset counter
-                else: # Just store the found rank
-                    PreviousRank = card.rank
-                    CounterCards = 1 # We have one card in the row
-
-        # Restore initial sorting
-        self.sort() # The list is now sorted by rank only (temporarily)
-        
-        return Found, SuitFound, RankFound, ScoreFound
+        if CounterFound == 2: # Player has the stöckr
+            self.stockr = True
 
 
-
-
-
-    def CheckAnnoncePlayer (self, PlayerNumber, GameData):
-        """ Check the best announce of a player
-
-        Args:
-            Self (class Hand): Hand of the player to check "Annonces"
-            GameData (Class GameData): Necessary data to chekc annonces
-            
-        Output:
-        * List with:
-            * The biggest annonce
-            * The total of the annonces
-            * The highest card
-            * The suit of this highest card 
-        """
-        Found, fSuit, fRank, TmpScore =  self.Check4SameRank(GameData) # Check best 4-cards that can be found
-        FakeCard = self.cards[0] # Just define a fake card to use this object later
-        if Found:
-            print ("Annonce 4-cards found for player " + str(PlayerNumber) + " in suit " + str(FakeCard.suit_names[fSuit]) + " in rank " + str(FakeCard.rank_names[fRank])) 
-        
-        Found, fRowSize, fSuit, fRank =  self.CheckCardsInarow(GameData)
-        if Found:
-            print ("Annonce " + str(fRowSize) + "-row found for player " + str(PlayerNumber) + " in suit " + str(FakeCard.suit_names[fSuit]) + " in rank " + str(FakeCard.rank_names[fRank])) 
-
-
-    def RemoveCardsFromAnnonceNew (self, StartPos, FinalPos):
+    def RemoveCardsFromAnnonce (self, StartPos, FinalPos):
         """ Remove from the hand the cards used to calculate the annonce
 
         Args:
@@ -439,7 +266,7 @@ class Hand(Deck):
             self.pop_card(StartPos) # Always use "StarPos" because each time we remove a card, all next ones are going one position less
 
 
-    def Check4SameRankNew(self, DataGame, SearchedScore, player):
+    def Check4SameRank(self, DataGame, SearchedScore, player):
         """ Checks if a 4 of same rank (from 9 and above) exists. If found, remove the cards from the hand
 
         Args:
@@ -482,7 +309,7 @@ class Hand(Deck):
                     if TmpScore == SearchedScore: # This is the score we are looking for
                         self.annonces.append([SearchedScore, SearchedScore, card.rank])
                         print ("Annonce 4-cards same rank found for player " + str(player)+ " in rank " + str(FakeCard.rank_names[card.rank])) 
-                        self.RemoveCardsFromAnnonceNew (i-CounterCards+1, i)
+                        self.RemoveCardsFromAnnonce (i-CounterCards+1, i)
                         nb_removed_cards = nb_removed_cards + CounterCards # Store the number of removed card to correct the index
                         Found = True
                         
@@ -491,11 +318,11 @@ class Hand(Deck):
                     PreviousRank = card.rank
                     CounterCards = 1 # We have one card in the row
 
-        print ("End of function Check4SameRankNew, result: ", str(Found))
+        print ("End of function Check4SameRank, result: ", str(Found))
         return Found
 
 
-    def CheckCardsInarowNew(self, DataGame, SearchedScore, player):
+    def CheckCardsInarow(self, DataGame, SearchedScore, player):
         """ Checks if cards -in-a-row or exist, for the given announce value
         
         Args:
@@ -539,7 +366,7 @@ class Hand(Deck):
                             ComparisonPoints = SearchedScore # When it is not atout
                         self.annonces.append([ComparisonPoints, SearchedScore, self.cards[i-1].rank]) # Happen annonce to the list of the player
                         print ("Annonce in-a-row found for score " + str(SearchedScore) + " in rank " + str(FakeCard.rank_names[self.cards[i - 1].rank]) + " for player " + str(player)) 
-                        self.RemoveCardsFromAnnonceNew (i-CounterCards, i-1) # Remove cards used for the annonce
+                        self.RemoveCardsFromAnnonce (i-CounterCards, i-1) # Remove cards used for the annonce
                         nb_removed_cards = nb_removed_cards + CounterCards # Store the number of removed card to correct the index
                          
                 # In all cases, at the end we store current suit and rank (new card for potential new suite)
@@ -559,7 +386,7 @@ class Hand(Deck):
                     ComparisonPoints = SearchedScore # When it is not atout
                 self.annonces.append([ComparisonPoints, SearchedScore, self.cards[i-1].rank]) # Happen annonce to the list of the player
                 print ("Annonce in-a-row found for score " + str(SearchedScore) + " in rank " + str(FakeCard.rank_names[self.cards[i].rank]) + " for player " + str(player)) 
-                self.RemoveCardsFromAnnonceNew (i-CounterCards+1, i) # Remove cards used for the annonce
+                self.RemoveCardsFromAnnonce (i-CounterCards+1, i) # Remove cards used for the annonce
         return
 
 class HandSet(Hand):
@@ -635,17 +462,47 @@ class HandSet(Hand):
         print ("Warning: No predefined situation for card validation found. Give green light by default")
         return True # Default case that should normally never happen
 
-    def action_play_card(self, pos_card, played_deck, TeamWonSet, DataGame):
+    def check_if_second_stockr(self, pos_card, DataGame, player):
+        """ Checks, if the user had Stockr initially, if he is playing the second card
+            
+            Return: True if the player is currently playing the second stöckr card
+        """
+        if not self.players[player].stockr:
+            return False # The player didn't have Stockr at the beginning
+
+        # Check that we are playing a potential stockr card
+        if not ((self.players[player].cards[pos_card].suit == DataGame.atout) and \
+            (self.players[player].cards[pos_card].rank == 6) or (self.players[player].cards[pos_card].rank == 7)): # Rank 6 or 7: Reine or Roi.
+            return False # Player is not currently playing a stockr card
+        NbStockrCardsFound = 0
+        for i in range(len(self.players[player].cards)):
+            if ((self.players[player].cards[i].rank == 6) or \
+                (self.players[player].cards[i].rank == 7)) and (self.players[player].cards[i].suit == DataGame.atout):
+                NbStockrCardsFound += 1
+        
+        if NbStockrCardsFound == 1: # Only the card to be player has been found, so this is the second card to be played
+            return True
+        else:
+            return False
+        
+
+    
+    def action_play_card(self, pos_card, played_deck, TeamWonSet, DataGame, Scores):
         """ Get the card at pos_card from the player hand, and mot it to the played deck. Potentially also moves the cards to the TeamWonSet """
         myCard = self.players[DataGame.current_player].pop_card(pos_card)
         played_deck.add_card(myCard)
         played_deck.check_end_turn_and_move_cards(DataGame, TeamWonSet) # This function will change current player.
+
+        if self.check_if_second_stockr(pos_card, DataGame, DataGame.current_player):
+            # Add 20 points to the related team
+            Scores.AddSetScore(DataGame.current_player % 2, 20)
+
         # Do actions that are only necessary when playing standalone
         if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Standalone"):
             if DataGame.preferences.LockDisplay:
                 DataGame.key_confirmed = False # Invalidate user
 
-    def action_card_selected(self, player, pos_card, DataGame, played_deck, TeamWonSet):
+    def action_card_selected(self, player, pos_card, DataGame, played_deck, TeamWonSet, Scores):
         """ If found, select the atout or move card depending on game state, or send info to server
 
         Return: True if everything could be executed. False if for any reason is was not possible to execute the action
@@ -667,11 +524,11 @@ class HandSet(Hand):
         else:
             if DataGame.is_this_game_state("Play"): # We are in play mode, so select atout or chibre
                 if self.IsCardAllowedToBePlayed(player, pos_card, played_deck, DataGame): # Check that card is allowed in the context
-                    self.action_play_card(pos_card, played_deck, TeamWonSet, DataGame)  # This function will change current player.
+                    self.action_play_card(pos_card, played_deck, TeamWonSet, DataGame, Scores)  # This function will change current player.
                     if DataGame.is_this_network_mode("Standalone") or DataGame.is_this_network_mode("Server"):
                         DataGame.ErrorState = DataGame.ErrorStates.index("NoError")
                         print ("Hand action_card_selected OK")
-                        # Now either the new playe is the server (So need to be master), or a client (need to go WaitClient)
+                        # Now either the new player is the server (So need to be master), or a client (need to go WaitClient)
                         if DataGame.is_this_network_mode("Server"):
                             if DataGame.current_player == 0: # This is the new player as it has been updated in action_play_card
                                 DataGame.SrvComObject.srv_change_state("Master")
@@ -696,7 +553,6 @@ class HandSet(Hand):
 
                 DataGame.debug_GameBoard.update_show_full_game(DataGame, DataGame.debug_handset, DataGame.debug_TeamWonSet, DataGame.scores, DataGame.card_picts, DataGame.PlayedDeckHand)
                 self.AnnoncesFullCheck(DataGame, DataGame.Scores)
-                # self.CheckAnnoncesGame(DataGame) # Now that atout has been chosen, check all annonces
                 DataGame.set_game_state("Play") # Change State to Play
         
         # If the action was done, we have to update the game state if we are the server: it means
@@ -766,12 +622,7 @@ class HandSet(Hand):
             PlayerToCount = WinnerTeam + 2*i # Define player to check
             for annonce in range (0, len(LocalHandset.players[PlayerToCount].annonces)):
                 NewScoreToAdd = LocalHandset.players[PlayerToCount].annonces[annonce][1]
-                # Scores.Team[WinnerTeam][0] = Scores.Team[WinnerTeam][0] + NewScoreToAdd
-                Scores.Team[WinnerTeam] = Scores.Team[WinnerTeam][0] + NewScoreToAdd, Scores.Team[WinnerTeam][1] # Add score in tuple
-                # Store the total
-                # EXAMPLE: self.Team[TeamSetID] = Score, self.Team[TeamSetID][1] + Score # Store current score and add to game score
-
-                # Scores.Team[WinnerTeam][0] += LocalHandset.players[PlayerToCount].annonces[annonce][1] # 1 for the second column which is the score for the current set
+                Scores.AddSetScore(WinnerTeam, NewScoreToAdd)
         return
 
     def AnnoncesFullCheck(self, DataGame, Scores):
@@ -782,27 +633,6 @@ class HandSet(Hand):
             DataGame: Datas of the game
             Scores: Object on which to add annonces values
         """
-        # Create temporary handset object for announce search purposes
-        LocHandset = HandSet("tmp")
-        # Copy each player hand
-        for i in range (0,4): # TODO: Get game data and do loop based on number of players
-            tmpHand = copy.deepcopy(self.players[i])
-            LocHandset.add_Hand(tmpHand) # Add the copied hand to the handset
-        
-        # Check all kind of annonce, in the order of value
-        for player in range (0,4): # Loop on the players. TODO: Use variable
-            LocHandset.players[player].Check4SameRankNew(DataGame, 200, player) # Search for 200 annonce
-            LocHandset.players[player].Check4SameRankNew(DataGame, 150, player) # Search for 150 annonce
-            LocHandset.players[player].Check4SameRankNew(DataGame, 100, player) # Search for  100 annonce: 4 identical (As, roi, reine, dame, dix)
-            LocHandset.players[player].CheckCardsInarowNew(DataGame, 100, player) # Check 100 annonce: 5 or more in a row. Add 1 if atout.
-            LocHandset.players[player].CheckCardsInarowNew(DataGame, 50, player) # Check 50 annonce: 4 in a row. Add 1 if atout
-            LocHandset.players[player].CheckCardsInarowNew(DataGame, 20, player) # Check 20 annonce: 3 in a row. Add 1 if atout
-
-        BestPlayer = LocHandset.GetPlayerWithBestAnnonce(DataGame) # Get the player number with best Annonce. It can be -1 if no annonce found at all
-        if (BestPlayer != -1): # Sanity check
-            TeamAnnonce = BestPlayer % 2 # Define The Team Number on which we will count points
-            self.AddAnnouncesScores(LocHandset, Scores, TeamAnnonce)
-        
         # For each player
             # Copy hand ==> OK
             # Check each type of annonce in the following order, and remove cards from copied hand: ==> OK
@@ -823,19 +653,30 @@ class HandSet(Hand):
         # For each player
             # Check stöckr. Store info in data of player who has stöckr (except if already part of annonce)
             # In the course of the game, check when playing a card, if player had stockr, if it is the second one
-        return
 
-    def CheckAnnoncesGame(self, GameData):
-        """
+        # Create temporary handset object for announce search purposes
+        LocHandset = HandSet("tmp")
+        # Copy each player hand
+        for i in range (0,4): # TODO: Get game data and do loop based on number of players
+            tmpHand = copy.deepcopy(self.players[i])
+            LocHandset.add_Hand(tmpHand) # Add the copied hand to the handset
         
-        Input:
-        * self: The handset of all players
-        * GameData: Data of the game (nb player, 1st player, atout)
+        # Check all kind of annonce, in the order of value
+        for player in range (0,4): # Loop on the players. TODO: Use variable
+            LocHandset.players[player].Check4SameRank(DataGame, 200, player) # Search for 200 annonce
+            LocHandset.players[player].Check4SameRank(DataGame, 150, player) # Search for 150 annonce
+            LocHandset.players[player].Check4SameRank(DataGame, 100, player) # Search for  100 annonce: 4 identical (As, roi, reine, dame, dix)
+            LocHandset.players[player].CheckCardsInarow(DataGame, 100, player) # Check 100 annonce: 5 or more in a row. Add 1 if atout.
+            LocHandset.players[player].CheckCardsInarow(DataGame, 50, player) # Check 50 annonce: 4 in a row. Add 1 if atout
+            LocHandset.players[player].CheckCardsInarow(DataGame, 20, player) # Check 20 annonce: 3 in a row. Add 1 if atout
+
+        BestPlayer = LocHandset.GetPlayerWithBestAnnonce(DataGame) # Get the player number with best Annonce. It can be -1 if no annonce found at all
+        if (BestPlayer != -1): # Sanity check
+            TeamAnnonce = BestPlayer % 2 # Define The Team Number on which we will count points
+            self.AddAnnouncesScores(LocHandset, Scores, TeamAnnonce)
         
-        Output:
-        * Team who has the best annonce , Total score of all annonces of the team
-        """
-        for i in range(len(self.players)): # Loop trought the players 
-            self.players[i].CheckAnnoncePlayer (i, GameData)
-            
-        # TODO: Write the real expected output
+        # Need now to check the Stöckr. As it could be the same cards than other annonce, we have to look in original full hands (so not LocHandset)
+        for player in range (0,4):
+            self.players[player].check_stockr(DataGame, player)
+
+        return

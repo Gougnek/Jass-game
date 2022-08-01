@@ -26,6 +26,15 @@ class Scores:
         for i in range(NbTeams):
             self.Team.append((0,0)) # Append Set, Game score with value 0
     
+    def AddSetScore(self, TeamID, ScoreToAdd):
+        """ Add Score to the current set """
+        self.Team[TeamID] = self.Team[TeamID][0] + ScoreToAdd, self.Team[TeamID][1] # Add score in tuple
+
+    def ResetSetScores(self):
+        """ Set 0 as score for new game """
+        self.Team[0] = 0, self.Team[0][1]
+        self.Team[1] = 0, self.Team[1][1]
+
     def CalculateScores(self, DataGame , SetTeamWon):
         """ Calculate the score for each team
 
@@ -60,7 +69,7 @@ class Scores:
         DataGame.set_game_state("Finished")
         return
 
-def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand):
+def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand, Scores):
     """ Get user events and call related functions to execute the action
     
     Returns always false, except if the actions is to quit the game
@@ -75,7 +84,7 @@ def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand):
             if player == -1: # Sanity check if the use clics on something valid
                 continue # Stop here and go back to the top of the loop
             # If Sandalone or server: do the action on the card (can be selection of atout or playing it)
-            handset.action_card_selected(player, pos_card, DataGame, PlayedDeckHand, TeamWonSet)
+            handset.action_card_selected(player, pos_card, DataGame, PlayedDeckHand, TeamWonSet, Scores)
             # Make it simple: if we are server, always request clients to update when there was a user clic.
             if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server"):     
                 DataGame.SrvComObject.srv_send_all_data(handset, DataGame, TeamWonSet, PlayedDeckHand)         
@@ -230,7 +239,7 @@ if __name__ == '__main__':
         
         """ MANAGE USER ACTIONS """
         # The next function manages for any state all keyboard and mouse events that can happen. Returns true if quit option has been chosen
-        Quit = ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand)
+        Quit = ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand, scores)
 
         """ PERFORM DATA UPDATE AND CALL GRAPHICAL UPDATE """
         # Update infos on handset and state if game is finished
@@ -238,7 +247,7 @@ if __name__ == '__main__':
 
         # Check if new game is requested after finished one (state changed)
         if DataGame.is_this_game_state("Init"):
-            deck.ResetForNextSet(DataGame, handset, TeamWonSet)
+            deck.ResetForNextSet(DataGame, handset, TeamWonSet, scores)
 
         # Update the screen
         ScreenGame.update(DataGame, handset, TeamWonSet, scores, card_picts, PlayedDeckHand)
