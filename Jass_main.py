@@ -231,11 +231,7 @@ if __name__ == '__main__':
             # Verify who is in the turn: Client or server ? Adapt consequently
             if DataGame.current_player == 0: # By default, server is always player 0
                 if mySrvComToClient.SrvState != mySrvComToClient.SrvStates.index("Master"):
-                    mySrvComToClient.srv_change_state("Master")  # Set state Master  
-            # else: # Server is not the current player
-                # Send YourTurn to client in charge and wait for message
-            #    mySrvComToClient.srv_give_master_and_listen_commands(handset, PlayedDeckHand, TeamWonSet, DataGame) # Wait for action 
-                 
+                    mySrvComToClient.srv_change_state("Master")  # Set state Master                  
         
         """ MANAGE USER ACTIONS """
         # The next function manages for any state all keyboard and mouse events that can happen. Returns true if quit option has been chosen

@@ -158,12 +158,20 @@ class GameBoard:
             textsurface = self.font_small.render('En cours ' + str(GameData.current_player + 1) , False, self.PlayerNumberColor)
             self.screen.blit(textsurface, (3, H - 40))
 
-    def show_scores(self, Scores):
+    def show_final_scores(self, Scores):
         W, H = self.screen.get_width(), self.screen.get_height()
         for i in range(2): # Loop on the two teams scores
             CurScore, TotScore = Scores.Team[i]
             textsurface = self.font_small.render('Score équipe ' + str(i + 1) + ' : ' + str(CurScore) + '/' + str(TotScore), False, self.ScoresColor)
             self.screen.blit(textsurface, (W-190, H//2 - 30 + i*30))
+        pygame.display.flip() # Update the window content
+
+    def show_scores(self, Scores):
+        W, H = self.screen.get_width(), self.screen.get_height()
+        for i in range(2): # Loop on the two teams scores
+            CurScore, TotScore = Scores.Team[i]
+            textsurface = self.font_small.render(str(i + 1) + ' : ' + str(CurScore), False, self.ScoresColor)
+            self.screen.blit(textsurface, (3, H//2 + i*30))
         pygame.display.flip() # Update the window content
 
     def update_backgroundPicture(self, DataGame):
@@ -237,7 +245,9 @@ class GameBoard:
         if DataGame.state == DataGame.GameStates.index("Results"): # Game is in finished state): # Game is finished
             scores.CalculateScores(DataGame, TeamWonSet)
         if DataGame.state == DataGame.GameStates.index("Finished"):
-            DataGame.game_board.show_scores(scores)
+            DataGame.game_board.show_final_scores(scores)
+        else:
+            DataGame.game_board.show_scores(scores) # Show current game scores (annonces + stöckr)
 
 
         pygame.display.flip() # Update the window content

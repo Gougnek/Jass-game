@@ -114,7 +114,7 @@ class GameData:
         """
         self.atout = -1 # Will contain later the reference on the atout
         self.latest_winner = -1 # Erase the information of who won the last deck
-        self.current_turn_first_player = self.current_first_player_set + 1 % self.nbplayers # first player of the current turn
+        self.current_turn_first_player = (self.current_first_player_set + 1) % self.nbplayers # first player of the current turn
         self.current_first_player_set = self.current_turn_first_player
         self.current_player = self.current_turn_first_player # Current player in turn
         self.set_game_state("SelAtout") # First stage

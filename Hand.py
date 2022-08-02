@@ -489,13 +489,18 @@ class HandSet(Hand):
     
     def action_play_card(self, pos_card, played_deck, TeamWonSet, DataGame, Scores):
         """ Get the card at pos_card from the player hand, and mot it to the played deck. Potentially also moves the cards to the TeamWonSet """
-        myCard = self.players[DataGame.current_player].pop_card(pos_card)
-        played_deck.add_card(myCard)
-        played_deck.check_end_turn_and_move_cards(DataGame, TeamWonSet) # This function will change current player.
-
+        
+        # Before moving the card, check if we are in situation to add a stockr annonce
         if self.check_if_second_stockr(pos_card, DataGame, DataGame.current_player):
             # Add 20 points to the related team
-            Scores.AddSetScore(DataGame.current_player % 2, 20)
+            Scores.AddSetScore(DataGame.current_player % 2, 20)      
+
+        # Then pop and add the card on the played deck
+        myCard = self.players[DataGame.current_player].pop_card(pos_card)
+        played_deck.add_card(myCard)
+              
+         
+        played_deck.check_end_turn_and_move_cards(DataGame, TeamWonSet) # This function will change current player.
 
         # Do actions that are only necessary when playing standalone
         if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Standalone"):
@@ -551,7 +556,8 @@ class HandSet(Hand):
                 if DataGame.preferences.LockDisplay:
                     DataGame.key_confirmed = False # Invalidate user
 
-                DataGame.debug_GameBoard.update_show_full_game(DataGame, DataGame.debug_handset, DataGame.debug_TeamWonSet, DataGame.scores, DataGame.card_picts, DataGame.PlayedDeckHand)
+                # The next function shows the full game for debug purpose. A breakpoint after this allows to take a picture of all cards
+                # DataGame.debug_GameBoard.update_show_full_game(DataGame, DataGame.debug_handset, DataGame.debug_TeamWonSet, DataGame.scores, DataGame.card_picts, DataGame.PlayedDeckHand)
                 self.AnnoncesFullCheck(DataGame, DataGame.Scores)
                 DataGame.set_game_state("Play") # Change State to Play
         
