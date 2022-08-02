@@ -13,7 +13,7 @@ class ClientSocket:
     HOST = "127.0.0.1"  # The server's hostname or IP address
     PORT = 65432  # The port used by the server 
     
-    SrvMesHead = {"Welcome" : "WE", "PlayedCards": "PC", "WonCards" : "WC", "Hand": "HA", "GameData" : "GD", "YourTurn" : "YT", "CardValid" : "CV", "CardInvalid" : "CI", "Refresh" : "RE"} # From Server Messages types (Str) and headers (2 chars)
+    SrvMesHead = {"Welcome" : "WE", "PlayedCards": "PC", "WonCards" : "WC", "Hand": "HA", "GameData" : "GD", "YourTurn" : "YT", "CardValid" : "CV", "CardInvalid" : "CI", "Refresh" : "RE", "Scores" : "SC"} # From Server Messages types (Str) and headers (2 chars)
     CliStates = ["Init", "Master", "WaitServer"] # Possible states of the client mode
     CliMesHead = {"CardSelected" : "CS"} 
 
@@ -52,6 +52,10 @@ class ClientSocket:
         GameData.local_player_num = WelcomeInfos.PlayerNumber
         return
     
+    def client_update_scores(self, payload, Scores):
+        Scores = pickle.loads(payload)
+        return
+
     def client_update_hand(self, payload, Handset, GameData):
         Handset.players[GameData.local_player_num] = pickle.loads(payload)
         return
@@ -75,7 +79,7 @@ class ClientSocket:
         PlayedDeckHand.cards = TmpPlayedHand.cards
         return
         
-    def cli_check_master_and_interpret_command(self, command, iteration, payload, PlayedDeckHand, TeamWonSet, Handset, GameData):
+    def cli_check_master_and_interpret_command(self, command, iteration, payload, PlayedDeckHand, TeamWonSet, Handset, GameData, Scores):
         """ Call the right function according to command
             For command send several time, an "iteration" parameters allow to know in which stage we are
             
@@ -120,6 +124,9 @@ class ClientSocket:
             print ("Cli cli_check_master_and_interpret_command CardInvalid")
             self.cli_change_state("WaitServer") # Wait server for updates (the server will give back the turn later)
             ForceExitWait = True
+        if command_str == self.SrvMesHead["Scores"]: # The client has to update its scores
+            # If server asks to refresh, we have to go out of the waiting loop to get the refresh done
+            self.client_update_scores(payload, Scores)
         if command_str == self.SrvMesHead["Refresh"]: # The client has to update its screen
             # If server asks to refresh, we have to go out of the waiting loop to get the refresh done
             ForceExitWait = True
@@ -209,7 +216,7 @@ class ClientSocket:
                     # print('The payload will be of ', str(SizeToGet) , ' bytes')
                     data = ""
                     if (SizeToGet == 0): # No payload: Call now the function to interpret the command
-                        if self.cli_check_master_and_interpret_command(command, Iteration, data, PlayedDeckHand, TeamWonSet, Handset, GameData):
+                        if self.cli_check_master_and_interpret_command(command, Iteration, data, PlayedDeckHand, TeamWonSet, Handset, GameData, GameData.Scores):
                             # If returned true, this means it is OK, but we need to leave the wait loop
                             ForceExitLoop = True
                         RecState = ReceptionStates.index("GetCommand")
@@ -226,7 +233,7 @@ class ClientSocket:
                 # print('Payload size: ', mysize, ' Payload expected:', SizeToGet)
                 if mysize == SizeToGet: # We received the full payload, let's work with it
                     # print('Full payload received')
-                    if self.cli_check_master_and_interpret_command(command, Iteration, data, PlayedDeckHand, TeamWonSet, Handset, GameData):
+                    if self.cli_check_master_and_interpret_command(command, Iteration, data, PlayedDeckHand, TeamWonSet, Handset, GameData, GameData.Scores):
                         # If returned true, this means it is OK, but we need to leave the wait loop
                         ForceExitLoop = True
                     command = data

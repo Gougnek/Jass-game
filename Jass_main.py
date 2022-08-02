@@ -227,7 +227,7 @@ if __name__ == '__main__':
         # Manage network operation when SERVER
         if DataGame.is_this_network_mode("Server"):
             if mySrvComToClient.SrvState == mySrvComToClient.SrvStates.index("WaitClient"): # The server is supposed to wait on message from the client
-                mySrvComToClient.srv_give_master_and_listen_commands(handset, PlayedDeckHand, TeamWonSet, DataGame) # Wait for action 
+                mySrvComToClient.srv_give_master_and_listen_commands(handset, PlayedDeckHand, TeamWonSet, DataGame, scores) # Wait for action 
             # Verify who is in the turn: Client or server ? Adapt consequently
             if DataGame.current_player == 0: # By default, server is always player 0
                 if mySrvComToClient.SrvState != mySrvComToClient.SrvStates.index("Master"):

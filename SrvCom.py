@@ -27,9 +27,9 @@ class SrvCom:
     HOST = "127.0.0.1"  # The server's hostname or IP address
     PORT = 65432  # The port used by the server 
 
-    SrvMesHead = {"Welcome" : "WE", "PlayedCards": "PC", "WonCards" : "WC", "Hand": "HA", "GameData" : "GD", "YourTurn" : "YT", "CardValid" : "CV", "CardInvalid" : "CI", "Refresh" : "RE"} # From Server Messages types (Str) and headers (2 chars)
+    SrvMesHead = {"Welcome" : "WE", "PlayedCards": "PC", "WonCards" : "WC", "Hand": "HA", "GameData" : "GD", "YourTurn" : "YT", "CardValid" : "CV", "CardInvalid" : "CI", "Refresh" : "RE", "Scores" : "SC"} # From Server Messages types (Str) and headers (2 chars)
     SrvStates = ["Init", "Master", "WaitClient"] # Possible states of the server mode
-    CliMesHead = {"CardSelected" : "CS"} # Messages that a client can send to the server 
+    CliMesHead = {"CardSelected" : "CS", "ScorePlayer" : "SP"} # Messages that a client can send to the server. Scores is used only if local even changes the player's score
     
     def __init__(self):
         self.conn = [] # Create an empty list to store future connection references. ID will be shifted: 1st connected will have index 0
@@ -75,6 +75,16 @@ class SrvCom:
             self.srv_send_header(ConID, "GameData", PayloadSize)         
             self.conn[ConID].send(DataToSend) # Send the payload
     
+    def srv_send_scores(self, Scores):
+        """ This function will send all game data necessary to each client, data which are defined in the class DataGameToSend
+
+        """
+        DataToSend = pickle.dumps(Scores)
+        for ConID in range(0,len(self.conn)):
+            PayloadSize = len(DataToSend)
+            self.srv_send_header(ConID, "Scores", PayloadSize)         
+            self.conn[ConID].send(DataToSend) # Send the payload
+
     def srv_send_refresh(self):
         """ This function will send a refresh command to all clients
         """
@@ -153,9 +163,10 @@ class SrvCom:
         self.srv_send_game_data(DataGame)
         self.srv_send_other_cards(PlayedDeckHand, TeamWonSet)
         self.srv_send_hands(handset, PlayedDeckHand, TeamWonSet, DataGame) # Note: This can only be called after welcome infos have been sent
+        self.srv_send_scores(DataGame.Scores)
         self.srv_send_refresh() # To force clients refresh
         
-    def srv_execute_card_selected_command(self, TeamWonSet, CardPos, Handset, PlayedDeck, DataGame):
+    def srv_execute_card_selected_command(self, TeamWonSet, CardPos, Handset, PlayedDeck, DataGame, Scores):
         """ This function will execute the necessary actions based on card clicked. It aslo send back a feed-back to the client and request the refresh """
         # Store Current Player value for the execution (in case it changes during the operations)
         FctCurPlayer = DataGame.current_player
@@ -166,7 +177,7 @@ class SrvCom:
             self.srv_send_game_data(DataGame) # Send update of the data game (including atout) to everybody
             self.srv_send_refresh() # To force clients refresh
         elif DataGame.is_this_game_state("Play"):
-            if Handset.action_card_selected(FctCurPlayer, CardPos, DataGame, PlayedDeck, TeamWonSet): # Note: action_card_selected function will update player number
+            if Handset.action_card_selected(FctCurPlayer, CardPos, DataGame, PlayedDeck, TeamWonSet, Scores): # Note: action_card_selected function will update player number
                 # The action was done successfully
                 self.srv_send_card_valid(FctCurPlayer)
             else:
@@ -176,7 +187,7 @@ class SrvCom:
             self.srv_send_refresh() # To force clients refresh
         return
     
-    def srv_listen_commands_and_execute(self, CurrentPlayer, Handset, PlayedDeck, TeamWonSet, DataGame):
+    def srv_listen_commands_and_execute(self, CurrentPlayer, Handset, PlayedDeck, TeamWonSet, DataGame, Scores):
         """ This function will listen on the command returned by the client and act upon
         Assumption: The client will only return ONE command
         """
@@ -195,10 +206,10 @@ class SrvCom:
                 # Card position is normally coded on a 2-chars string
                 CardPos = int(str(Payload, 'UTF-8')) # Convert from bytes received to integer
                 print ("server: card select is position", str(CardPos))
-                self.srv_execute_card_selected_command(TeamWonSet, CardPos, Handset, PlayedDeck, DataGame) # Execute action (including feed-back to the client)
+                self.srv_execute_card_selected_command(TeamWonSet, CardPos, Handset, PlayedDeck, DataGame, Scores) # Execute action (including feed-back to the client)
 
 
-    def srv_give_master_and_listen_commands(self, Handset, PlayedDeck, TeamWonSet, DataGame):
+    def srv_give_master_and_listen_commands(self, Handset, PlayedDeck, TeamWonSet, DataGame, Scores):
         """ This function will give the master to the player in turn (via its connection) and wait for client message to continue
         
         DataGame: Information about the game (needed: current player)
@@ -208,7 +219,7 @@ class SrvCom:
         # First Send the message to the client in turn that he becomes temporarilly the master
         self.srv_send_header(DataGame.current_player - 1, "YourTurn", 0) # -1 because the first connection (index 0) corresponds to player 1
         # Then wait for message from the client, and execute necessary actions
-        self.srv_listen_commands_and_execute(DataGame.current_player, Handset, PlayedDeck, TeamWonSet, DataGame)
+        self.srv_listen_commands_and_execute(DataGame.current_player, Handset, PlayedDeck, TeamWonSet, DataGame, Scores)
         # We don't know what happened, but let's resend all data to clients
         self.srv_send_all_data(Handset, DataGame, TeamWonSet, PlayedDeck)
          
