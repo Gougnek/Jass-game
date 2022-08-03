@@ -53,7 +53,9 @@ class ClientSocket:
         return
     
     def client_update_scores(self, payload, Scores):
-        Scores = pickle.loads(payload)
+        """ Create object to store received scores and then copy the data to the standard Scores object """
+        NewGameDataScores = pickle.loads(payload)
+        Scores.SetNewScores(NewGameDataScores)
         return
 
     def client_update_hand(self, payload, Handset, GameData):

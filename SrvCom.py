@@ -29,7 +29,7 @@ class SrvCom:
 
     SrvMesHead = {"Welcome" : "WE", "PlayedCards": "PC", "WonCards" : "WC", "Hand": "HA", "GameData" : "GD", "YourTurn" : "YT", "CardValid" : "CV", "CardInvalid" : "CI", "Refresh" : "RE", "Scores" : "SC"} # From Server Messages types (Str) and headers (2 chars)
     SrvStates = ["Init", "Master", "WaitClient"] # Possible states of the server mode
-    CliMesHead = {"CardSelected" : "CS", "ScorePlayer" : "SP"} # Messages that a client can send to the server. Scores is used only if local even changes the player's score
+    CliMesHead = {"CardSelected" : "CS"} # Messages that a client can send to the server. Scores is used only if local even changes the player's score
     
     def __init__(self):
         self.conn = [] # Create an empty list to store future connection references. ID will be shifted: 1st connected will have index 0
@@ -173,8 +173,10 @@ class SrvCom:
         # Execute the operations as if we were in standalone mode
         if DataGame.is_this_game_state("SelAtout") or DataGame.is_this_game_state("SelAtoutChibre"):
             DataGame.atout = Handset.players[FctCurPlayer].cards[CardPos].suit # Store the chosen atout
+            Handset.AnnoncesFullCheck(DataGame, Scores) # Check if all users annonces, compare value and add points to the team if needed
             DataGame.set_game_state("Play") # Change the server state to Play
             self.srv_send_game_data(DataGame) # Send update of the data game (including atout) to everybody
+            self.srv_send_scores(Scores) # Send updated score in case of annonces
             self.srv_send_refresh() # To force clients refresh
         elif DataGame.is_this_game_state("Play"):
             if Handset.action_card_selected(FctCurPlayer, CardPos, DataGame, PlayedDeck, TeamWonSet, Scores): # Note: action_card_selected function will update player number

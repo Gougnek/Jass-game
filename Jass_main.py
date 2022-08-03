@@ -30,6 +30,11 @@ class Scores:
         """ Add Score to the current set """
         self.Team[TeamID] = self.Team[TeamID][0] + ScoreToAdd, self.Team[TeamID][1] # Add score in tuple
 
+    def SetNewScores(self, ScoresTmpObject):
+        """ Copy the scores from ScoresTmpObject to self """
+        self.Team[0] = ScoresTmpObject.Team[0][0], ScoresTmpObject.Team[0][1] # copy scores in tuple
+        self.Team[1] = ScoresTmpObject.Team[1][0], ScoresTmpObject.Team[1][1] # copy scores in tuple
+
     def ResetSetScores(self):
         """ Set 0 as score for new game """
         self.Team[0] = 0, self.Team[0][1]
@@ -195,7 +200,7 @@ if __name__ == '__main__':
     if DataGame.is_this_network_mode("Client"):
         # client_connect_and_test(handset) # Temporary: get the player 0 hand and returns
         myClientSocket = ClientCom.ClientSocket()
-        myClientSocket.client_connect_to_server() # Crate connection to server and get the related socket
+        myClientSocket.client_connect_to_server() # Create connection to server and get the related socket
         # Store the reference of the Client Socket in GameData for an easier access
         DataGame.cli_connection = myClientSocket
         # Call a function that will listend and interpret initial commands

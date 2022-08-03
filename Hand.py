@@ -558,7 +558,7 @@ class HandSet(Hand):
 
                 # The next function shows the full game for debug purpose. A breakpoint after this allows to take a picture of all cards
                 # DataGame.debug_GameBoard.update_show_full_game(DataGame, DataGame.debug_handset, DataGame.debug_TeamWonSet, DataGame.scores, DataGame.card_picts, DataGame.PlayedDeckHand)
-                self.AnnoncesFullCheck(DataGame, DataGame.Scores)
+                self.AnnoncesFullCheck(DataGame, DataGame.Scores) # Check if all users annonces, compare value and add points to the team if needed
                 DataGame.set_game_state("Play") # Change State to Play
         
         # If the action was done, we have to update the game state if we are the server: it means
