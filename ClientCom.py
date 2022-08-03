@@ -13,7 +13,18 @@ class ClientSocket:
     HOST = "127.0.0.1"  # The server's hostname or IP address
     PORT = 65432  # The port used by the server 
     
-    SrvMesHead = {"Welcome" : "WE", "PlayedCards": "PC", "WonCards" : "WC", "Hand": "HA", "GameData" : "GD", "YourTurn" : "YT", "CardValid" : "CV", "CardInvalid" : "CI", "Refresh" : "RE", "Scores" : "SC"} # From Server Messages types (Str) and headers (2 chars)
+    SrvMesHead = {"Welcome" : "WE", \
+        "PlayedCards": "PC", \
+            "WonCards" : "WC", \
+                "Hand": "HA", \
+                    "GameData" : "GD", \
+                        "YourTurn" : "YT", \
+                            "CardValid" : "CV", \
+                                "CardInvalid" : "CI", 
+                                    "Refresh" : "RE", \
+                                        "Scores" : "SC", \
+                                            "ForceState" : "FS", \
+                                                "CardsAnnonces" : "CA"} # From Server Messages types (Str) and headers (2 chars)
     CliStates = ["Init", "Master", "WaitServer"] # Possible states of the client mode
     CliMesHead = {"CardSelected" : "CS"} 
 
@@ -35,6 +46,12 @@ class ClientSocket:
         """ Create connection to the server """
         self.sock.connect((self.HOST, self.PORT))
     
+    def client_force_gamestate(self, payload, GameData):
+        """ New state forced by the server """
+        NewState = pickle.loads(payload)
+        GameData.state = NewState.state
+        return
+
     def client_update_gamedata(self, payload, GameData):
         """ Receive GameData from server (payload) and replace local game data
         """
@@ -58,6 +75,12 @@ class ClientSocket:
         Scores.SetNewScores(NewGameDataScores)
         return
 
+    def client_update_game_state(self, payload, GameData):
+        """ Create object to store received scores and then copy the state """
+        NewState = pickle.loads(payload)
+        GameData.state = NewState.state
+        return
+
     def client_update_hand(self, payload, Handset, GameData):
         Handset.players[GameData.local_player_num] = pickle.loads(payload)
         return
@@ -68,7 +91,17 @@ class ClientSocket:
         # Undump (result will be a object of identical type than the one sent)
         TeamWonSet.players[iteration] = pickle.loads(payload)
         return
-        
+
+    def cli_store_annonces(self, payload, handset):
+        """ Receive GameData from server (payload) and replace local game data
+        """
+        NewAnnonces = pickle.loads(payload)
+        # Copy received data the annonce of each hand
+        for player in range(0,4):
+            if len(NewAnnonces.annonces_to_send[player]) > 0:
+                handset.players[player].annonces_cards.append(NewAnnonces.annonces_to_send[player])
+        return
+
     def client_update_played_cards(self, payload, PlayedDeckHand):
         """ Receive the played hand from server (payload) and replace local played hand
         """
@@ -129,6 +162,12 @@ class ClientSocket:
         if command_str == self.SrvMesHead["Scores"]: # The client has to update its scores
             # If server asks to refresh, we have to go out of the waiting loop to get the refresh done
             self.client_update_scores(payload, Scores)
+        if command_str == self.SrvMesHead["ForceState"]:
+            self.client_force_gamestate(payload, GameData)
+            ForceExitWait = True # Need potential refresh
+        if command_str == self.SrvMesHead["CardsAnnonces"]:
+            self.cli_store_annonces(payload, Handset)
+            ForceExitWait = True # Need potential refresh
         if command_str == self.SrvMesHead["Refresh"]: # The client has to update its screen
             # If server asks to refresh, we have to go out of the waiting loop to get the refresh done
             ForceExitWait = True

@@ -3,6 +3,7 @@
     Classes in that file manage objects and methods related to Hand and Handset management
 """
 
+from site import addsitedir
 from Deck import Deck
 from GameData import GameData
 import pygame, copy
@@ -17,6 +18,7 @@ class Hand(Deck):
         self.KeyCode = ' ' # Key code that the user will use to allow the display of his deck
         self.annonces = [] # Table to store found annonces during the annonce check. Each position contains a list: [ComparisonPoints, RealPoints, RefCardRank]
         self.stockr = False # Will be true if the Stöckr is found for this player
+        self.annonces_cards = [] # Table to store cards from found annonces in order to display them later
 
     def sort(self):
         """Sorts the cards in ascending order, firt suit, then rank."""
@@ -108,14 +110,6 @@ class Hand(Deck):
             gameBoard.screen.blit(card_picts.GetCardPicture(self.cards[i].suit, self.cards[i].rank), (x,y))
             x=x+91
 
-    def show_cards1(self, gameBoard, PlayerNumber, card_picts):
-        """Shows cards on the screen (basic function) """
-        x,y = gameBoard.HandxShift, 136*PlayerNumber
-        NbCards = len(self.cards)
-        for i in range(NbCards):
-            gameBoard.screen.blit(card_picts.GetCardPicture(self.cards[i].suit, self.cards[i].rank), (x,y))
-            x=x+91
-
     def show_played_cards(self, gameDisplay, card_picts):
         """Shows played cards on the screen"""
         x,y = 420, 250
@@ -174,9 +168,16 @@ class Hand(Deck):
     def add_card(self, card):
         """Adds a card to the deck.
 
-        card: Card
+        card: Card to be added
         """
         self.cards.append(card)
+
+    def add_card_annonce(self, card):
+        """ Add card poped from temporary deck to the annonce deck
+
+        card: Card to be added
+        """
+        self.annonces_cards.append(card)
     
     def winner_played(self, game_data):
         """Returns who won the set of played cards.
@@ -262,8 +263,8 @@ class Hand(Deck):
             StartPos: Position of the first card of the annonce in the hand
             FinalPos: Position of the last card of the annonce in the hand
         """
-        for i in range(StartPos, FinalPos):
-            self.pop_card(StartPos) # Always use "StarPos" because each time we remove a card, all next ones are going one position less
+        for i in range(StartPos, FinalPos+1):  
+            self.add_card_annonce(self.pop_card(StartPos)) # Always use "StarPos" because each time we remove a card, all next ones are going one position less
 
 
     def Check4SameRank(self, DataGame, SearchedScore, player):
@@ -396,6 +397,7 @@ class HandSet(Hand):
     
     def __init__(self, label=''):
         self.players = []
+        self.TeamAnnonce = -1 # Will contain -1 or the number of the team (0 or 1) which annonces should be counted
 
     def add_Hand(self, hand):
         """Adds a card to the deck.
@@ -558,8 +560,15 @@ class HandSet(Hand):
 
                 # The next function shows the full game for debug purpose. A breakpoint after this allows to take a picture of all cards
                 # DataGame.debug_GameBoard.update_show_full_game(DataGame, DataGame.debug_handset, DataGame.debug_TeamWonSet, DataGame.scores, DataGame.card_picts, DataGame.PlayedDeckHand)
-                self.AnnoncesFullCheck(DataGame, DataGame.Scores) # Check if all users annonces, compare value and add points to the team if needed
-                DataGame.set_game_state("Play") # Change State to Play
+                
+                if self.AnnoncesFullCheck(DataGame, DataGame.Scores): # Check if all users annonces, compare value and add points to the team if needed
+                    DataGame.set_game_state("ShowAnnonces") # Change State to ShowAnnonces
+                    if DataGame.is_this_network_mode("Server"):
+                        DataGame.SrvComObject.srv_send_annonces(self) # Send the annonces to clients to allow them to display them
+                        DataGame.SrvComObject.srv_send_force_state("ShowAnnonces")
+                    # DataGame.SrvComObject.srv_send_all_data(self, DataGame, TeamWonSet, played_deck) # Send all data include new state and cards of annonce
+                else:
+                    DataGame.set_game_state("Play") # Change State to Play
         
         # If the action was done, we have to update the game state if we are the server: it means
         
@@ -631,6 +640,18 @@ class HandSet(Hand):
                 Scores.AddSetScore(WinnerTeam, NewScoreToAdd)
         return
 
+    def copy_annonces_cards(self, LocalHandset, Player):
+        """ Copy the cards of found annonces in the real standard hands
+        
+        Args:
+            Self (class Handset): Real Handset, in which the annonces cards must be copied
+            LocalHandset: temporary object used for checking annonce, in which announce cards are located
+            Player: Player of the passed hand
+        """
+        # Copy from LocalHandset.annonces_cards to self.annonces_cards
+        self.players[Player].annonces_cards = copy.deepcopy(LocalHandset.players[Player].annonces_cards)
+        return
+
     def AnnoncesFullCheck(self, DataGame, Scores):
         """ Check all annonces, defines the best one and add to the scores
         
@@ -638,6 +659,8 @@ class HandSet(Hand):
             Self (class Handset): handset of the players
             DataGame: Datas of the game
             Scores: Object on which to add annonces values
+
+        Return: Returns true if at least one annonce is found and that we need to display them
         """
         # For each player
             # Copy hand ==> OK
@@ -660,6 +683,7 @@ class HandSet(Hand):
             # Check stöckr. Store info in data of player who has stöckr (except if already part of annonce)
             # In the course of the game, check when playing a card, if player had stockr, if it is the second one
 
+        ValidAnnoncesFound = False # Will be true if annonces found (except if only stöckr)
         # Create temporary handset object for announce search purposes
         LocHandset = HandSet("tmp")
         # Copy each player hand
@@ -678,11 +702,17 @@ class HandSet(Hand):
 
         BestPlayer = LocHandset.GetPlayerWithBestAnnonce(DataGame) # Get the player number with best Annonce. It can be -1 if no annonce found at all
         if (BestPlayer != -1): # Sanity check
-            TeamAnnonce = BestPlayer % 2 # Define The Team Number on which we will count points
-            self.AddAnnouncesScores(LocHandset, Scores, TeamAnnonce)
+            self.TeamAnnonce = BestPlayer % 2 # Define The Team Number on which we will count points
+            self.AddAnnouncesScores(LocHandset, Scores, self.TeamAnnonce)
+            ValidAnnoncesFound = True
         
         # Need now to check the Stöckr. As it could be the same cards than other annonce, we have to look in original full hands (so not LocHandset)
         for player in range (0,4):
             self.players[player].check_stockr(DataGame, player)
 
-        return
+        if ValidAnnoncesFound:
+            # Need to copy poped cards for the team with valid annonces from LocHandset to standard handset for future display
+            self.copy_annonces_cards(LocHandset, self.TeamAnnonce) # First player of the team
+            self.copy_annonces_cards(LocHandset, self.TeamAnnonce+2) # Second player of the team
+
+        return ValidAnnoncesFound

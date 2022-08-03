@@ -85,6 +85,10 @@ def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand, Scores)
             Quit = True  # Flag that we are done so we exit this loop
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = pygame.mouse.get_pos()
+            if DataGame.state == DataGame.GameStates.index("ShowAnnonces"): # Change mode wherever the click is
+                DataGame.set_game_state("Play") # Just stop showing annonce and go to play mode
+                if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server"): 
+                    DataGame.SrvComObject.srv_send_force_state("Play") # Force client status change
             player, pos_card = DataGame.game_board.GetCardByClick(x, y, DataGame, handset, ScreenGame)
             if player == -1: # Sanity check if the use clics on something valid
                 continue # Stop here and go back to the top of the loop

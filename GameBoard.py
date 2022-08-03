@@ -173,6 +173,34 @@ class GameBoard:
             textsurface = self.font_small.render(str(i + 1) + ' : ' + str(CurScore), False, self.ScoresColor)
             self.screen.blit(textsurface, (3, H//2 + i*30))
         pygame.display.flip() # Update the window content
+    
+    def show_valid_annonces(self, DataGame, handset, card_picts):
+        """ Show the cards of the annonce(s)
+        
+        Input:
+            DataGame: Data form the game
+            handset: the set of hands were looking for cards of annonce
+        
+        """
+        W, H = self.screen.get_width(), self.screen.get_height()
+        # Display a rectangle for annonces
+        pygame.draw.rect(self.screen,(0,70,40),(35,H//2-115,W-80,185))
+        # Display a title
+        textsurface = self.font_small.render("Annonces des joueurs de l'équipe " + str(handset.TeamAnnonce + 1), False, self.ScoresColor)
+        self.screen.blit(textsurface, (45, H//2-115))
+        # Display the cards
+        x,y = 45, H//2-75
+        for teams in range(2): # Loop on the two teams scores
+            pl = teams*2 + handset.TeamAnnonce # Shortcut for the player for which to display annonces
+            if len(handset.players[pl].annonces_cards) > 0: # Sanity check to avoid that list of annonces cards is empty
+                x += teams*10 # Add 10 pixels before displaying annonces of the second player
+                textsurface = self.font_small.render("Joueur " + str(pl + 1), False, self.ScoresColor)
+                self.screen.blit(textsurface, (x, H//2-96))
+                for CardPos in range(0,len(handset.players[pl].annonces_cards)):
+                    self.screen.blit(card_picts.GetCardPicture(handset.players[pl].annonces_cards[CardPos].suit, handset.players[pl].annonces_cards[CardPos].rank), (x,y))
+                    x=x+91
+
+        pygame.display.flip() # Update the window content
 
     def update_backgroundPicture(self, DataGame):
         """ Fill the screen based on DataGame.ErrorState and DataGame. current_player """
@@ -224,7 +252,14 @@ class GameBoard:
         
         self.show_atout(DataGame, self) # Display the selected atout
         
+        # Special case: If we need to display the annonces, just do that now and don't display the rest
+        if DataGame.state == DataGame.GameStates.index("ShowAnnonces"): 
+            self.show_valid_annonces(DataGame, handset, card_picts) # Show the annonces
+            self.clock.tick(10)
+            return
+
         self.show_player_numbers(handset, DataGame) # Show numbers of players
+            
 
         for i in range(DataGame.nbplayers):
             # Case we are standalone:

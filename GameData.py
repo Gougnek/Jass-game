@@ -11,11 +11,12 @@ class GameData:
     "Init" is when the game is initializing the first time
     "SelAtout" is when the first play has to choose atout or chibre
     "SelAtoutChibre" is when the first user has chibred and we are waiting for the other player in the team to select atout
+    "ShowAnnonces" is when we are displaying all the annonces of the team which have the biggest one
     "Play" is when the user has to select his card
     "Results" is when the set is finished,  but we are displaying set statistics (like scores)
     "Finished" is when the user validated the result State to go further
     """
-    GameStates = ["Init", "SelAtout", "SelAtoutChibre", "Play", "Results", "Finished"]
+    GameStates = ["Init", "SelAtout", "SelAtoutChibre", "ShowAnnonces", "Play", "Results", "Finished"]
     ErrorStates = ["NoError", "NotAllowed"]
 
     def __init__(self, NbPlayers):

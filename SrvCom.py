@@ -6,6 +6,7 @@
 # from asyncio.windows_events import NULL
 import socket, selectors, types, sys, pickle
 import time
+import GameData
 
 class WelcomeInfosToSend:
     """ Class containing only data to be sent to clients at the game start (sent only once)"""
@@ -20,6 +21,17 @@ class DataGameToSend:
         self.nbplayers = nb_players # Number of players in the game
         self.latest_winner = latest_winner # Will contain the latest Winner in order to know which 4-cards to show
 
+class GameStateToSend:
+    """ Class containing only object with game state change """
+    def __init__(self, current_state):
+        self.state = GameData.GameData.GameStates.index(current_state)
+
+class AnnoncesToSend:
+    """ Class containing only the annonces of the 4 players """
+    def __init__(self, handset):
+        self.annonces_to_send = [] # Create empty list
+        for player in range(0,4):
+            self.annonces_to_send.append(handset.players[player].annonces_cards)
 
 class SrvCom:
     """ Class for the server mode, containing all information about clients connected in case of run in server mode"""
@@ -27,7 +39,20 @@ class SrvCom:
     HOST = "127.0.0.1"  # The server's hostname or IP address
     PORT = 65432  # The port used by the server 
 
-    SrvMesHead = {"Welcome" : "WE", "PlayedCards": "PC", "WonCards" : "WC", "Hand": "HA", "GameData" : "GD", "YourTurn" : "YT", "CardValid" : "CV", "CardInvalid" : "CI", "Refresh" : "RE", "Scores" : "SC"} # From Server Messages types (Str) and headers (2 chars)
+    SrvMesHead = {"Welcome" : "WE", \
+                    "PlayedCards": "PC", \
+                        "WonCards" : "WC", \
+                            "Hand": "HA", \
+                                "GameData" : "GD", \
+                                    "YourTurn" : "YT", \
+                                        "CardValid" : "CV", \
+                                            "CardInvalid" : "CI", 
+                                                "Refresh" : "RE", \
+                                                    "Scores" : "SC", \
+                                                        "ForceState" : "FS", \
+                                                            "CardsAnnonces" : "CA"} # From Server Messages types (Str) and headers (2 chars)
+
+
     SrvStates = ["Init", "Master", "WaitClient"] # Possible states of the server mode
     CliMesHead = {"CardSelected" : "CS"} # Messages that a client can send to the server. Scores is used only if local even changes the player's score
     
@@ -75,6 +100,28 @@ class SrvCom:
             self.srv_send_header(ConID, "GameData", PayloadSize)         
             self.conn[ConID].send(DataToSend) # Send the payload
     
+    def srv_send_force_state(self, NewState):
+        """ This function will send all game data necessary to each client, data which are defined in the class DataGameToSend
+
+        """
+        # Create object to send
+        ObjectToSend = GameStateToSend(NewState)
+        DataToSend = pickle.dumps(ObjectToSend)
+        for ConID in range(0,len(self.conn)):
+            PayloadSize = len(DataToSend)
+            self.srv_send_header(ConID, "ForceState", PayloadSize)         
+            self.conn[ConID].send(DataToSend) # Send the payload
+
+    def srv_send_annonces(self, handset):
+        """ This function will send all annonces to the clients for displaying them """
+        # Create object to send
+        ObjectToSend = AnnoncesToSend(handset)
+        DataToSend = pickle.dumps(ObjectToSend)
+        for ConID in range(0,len(self.conn)):
+            PayloadSize = len(DataToSend)
+            self.srv_send_header(ConID, "CardsAnnonces", PayloadSize)         
+            self.conn[ConID].send(DataToSend) # Send the payload
+
     def srv_send_scores(self, Scores):
         """ This function will send all game data necessary to each client, data which are defined in the class DataGameToSend
 
@@ -173,8 +220,13 @@ class SrvCom:
         # Execute the operations as if we were in standalone mode
         if DataGame.is_this_game_state("SelAtout") or DataGame.is_this_game_state("SelAtoutChibre"):
             DataGame.atout = Handset.players[FctCurPlayer].cards[CardPos].suit # Store the chosen atout
-            Handset.AnnoncesFullCheck(DataGame, Scores) # Check if all users annonces, compare value and add points to the team if needed
-            DataGame.set_game_state("Play") # Change the server state to Play
+            if Handset.AnnoncesFullCheck(DataGame, Scores): # Check if all users annonces, compare value and add points to the team if needed
+                DataGame.set_game_state("ShowAnnonces") # Change State to ShowAnnonces
+                DataGame.SrvComObject.srv_send_all_data(Handset, DataGame, TeamWonSet, PlayedDeck) # Send all data include new state and cards of annonce
+                DataGame.SrvComObject.srv_send_annonces(Handset)
+                DataGame.SrvComObject.srv_send_force_state("ShowAnnonces") # Send all data include new state and cards of annonce
+            else:
+                DataGame.set_game_state("Play") # Change State to Play
             self.srv_send_game_data(DataGame) # Send update of the data game (including atout) to everybody
             self.srv_send_scores(Scores) # Send updated score in case of annonces
             self.srv_send_refresh() # To force clients refresh
@@ -186,7 +238,6 @@ class SrvCom:
                 # The action was refused
                 self.srv_send_card_invalid(FctCurPlayer)
             self.srv_send_all_data(Handset, DataGame, TeamWonSet, PlayedDeck) # Send update of all data after player played
-            self.srv_send_refresh() # To force clients refresh
         return
     
     def srv_listen_commands_and_execute(self, CurrentPlayer, Handset, PlayedDeck, TeamWonSet, DataGame, Scores):
