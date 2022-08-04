@@ -88,7 +88,10 @@ def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand, Scores)
             if DataGame.state == DataGame.GameStates.index("ShowAnnonces"): # Change mode wherever the click is
                 DataGame.set_game_state("Play") # Just stop showing annonce and go to play mode
                 if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server"): 
-                    DataGame.SrvComObject.srv_send_force_state("Play") # Force client status change
+                    DataGame.SrvComObject.srv_send_force_state("Play", -1) # Force client status change
+                if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Client"):
+                    # Need to send message to server that annonces have been validated
+                    DataGame.cli_connection.cli_send_annonces_validated()
             player, pos_card = DataGame.game_board.GetCardByClick(x, y, DataGame, handset, ScreenGame)
             if player == -1: # Sanity check if the use clics on something valid
                 continue # Stop here and go back to the top of the loop

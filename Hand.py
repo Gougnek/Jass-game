@@ -565,7 +565,7 @@ class HandSet(Hand):
                     DataGame.set_game_state("ShowAnnonces") # Change State to ShowAnnonces
                     if DataGame.is_this_network_mode("Server"):
                         DataGame.SrvComObject.srv_send_annonces(self) # Send the annonces to clients to allow them to display them
-                        DataGame.SrvComObject.srv_send_force_state("ShowAnnonces")
+                        DataGame.SrvComObject.srv_send_force_state("ShowAnnonces", -1)
                     # DataGame.SrvComObject.srv_send_all_data(self, DataGame, TeamWonSet, played_deck) # Send all data include new state and cards of annonce
                 else:
                     DataGame.set_game_state("Play") # Change State to Play

@@ -29,9 +29,13 @@ class GameStateToSend:
 class AnnoncesToSend:
     """ Class containing only the annonces of the 4 players """
     def __init__(self, handset):
-        self.annonces_to_send = [] # Create empty list
+        self.annonces_to_send = [] # Create empty list. This will be a list of list. First level: player. Second level: list of cards
+        self.team_annonce = handset.TeamAnnonce # contain the team number for which we should display the annonces
         for player in range(0,4):
-            self.annonces_to_send.append(handset.players[player].annonces_cards)
+            self.annonces_to_send.append([]) # Create the list before using append
+            for cardID in range(0, len(handset.players[player].annonces_cards)):
+                self.annonces_to_send[player].append(handset.players[player].annonces_cards[cardID])
+        return
 
 class SrvCom:
     """ Class for the server mode, containing all information about clients connected in case of run in server mode"""
@@ -54,7 +58,7 @@ class SrvCom:
 
 
     SrvStates = ["Init", "Master", "WaitClient"] # Possible states of the server mode
-    CliMesHead = {"CardSelected" : "CS"} # Messages that a client can send to the server. Scores is used only if local even changes the player's score
+    CliMesHead = {"CardSelected" : "CS", "AnnoncesValidated" : "AV"} # Messages that a client can send to the server. Scores is used only if local even changes the player's score
     
     def __init__(self):
         self.conn = [] # Create an empty list to store future connection references. ID will be shifted: 1st connected will have index 0
@@ -100,17 +104,21 @@ class SrvCom:
             self.srv_send_header(ConID, "GameData", PayloadSize)         
             self.conn[ConID].send(DataToSend) # Send the payload
     
-    def srv_send_force_state(self, NewState):
+    def srv_send_force_state(self, NewState, AvoidClient):
         """ This function will send all game data necessary to each client, data which are defined in the class DataGameToSend
 
+            Inputs:
+                NewState: New state to be sent to client
+                AvoidClient: avoid update to the mentionne client ID (nothing to avoid if value is -1)
         """
         # Create object to send
         ObjectToSend = GameStateToSend(NewState)
         DataToSend = pickle.dumps(ObjectToSend)
         for ConID in range(0,len(self.conn)):
-            PayloadSize = len(DataToSend)
-            self.srv_send_header(ConID, "ForceState", PayloadSize)         
-            self.conn[ConID].send(DataToSend) # Send the payload
+            if ConID != AvoidClient: # Check in case we need to avoid client
+                PayloadSize = len(DataToSend)
+                self.srv_send_header(ConID, "ForceState", PayloadSize)         
+                self.conn[ConID].send(DataToSend) # Send the payload
 
     def srv_send_annonces(self, handset):
         """ This function will send all annonces to the clients for displaying them """
@@ -224,7 +232,7 @@ class SrvCom:
                 DataGame.set_game_state("ShowAnnonces") # Change State to ShowAnnonces
                 DataGame.SrvComObject.srv_send_all_data(Handset, DataGame, TeamWonSet, PlayedDeck) # Send all data include new state and cards of annonce
                 DataGame.SrvComObject.srv_send_annonces(Handset)
-                DataGame.SrvComObject.srv_send_force_state("ShowAnnonces") # Send all data include new state and cards of annonce
+                DataGame.SrvComObject.srv_send_force_state("ShowAnnonces", -1) # Send all data include new state and cards of annonce
             else:
                 DataGame.set_game_state("Play") # Change State to Play
             self.srv_send_game_data(DataGame) # Send update of the data game (including atout) to everybody
@@ -250,16 +258,23 @@ class SrvCom:
         command_str = str(data, 'UTF-8') # Convert from bytes received to string for comparison
         
         print ('Received Command: ', command_str, ' from client: ', CurrentPlayer - 1)
+        if command_str == "00":
+            print ("Error message")
         # Read the size of the message
         Size = self.conn[CurrentPlayer - 1].recv(5) # Size is coded in string on 5 characters
         SizeToGet = int(Size)
         if (SizeToGet > 0): # Only get payload if size > 0
             Payload = self.conn[CurrentPlayer - 1].recv(SizeToGet) # Size is coded in string on 5 characters
-            if command_str == self.CliMesHead["CardSelected"]:
-                # Card position is normally coded on a 2-chars string
-                CardPos = int(str(Payload, 'UTF-8')) # Convert from bytes received to integer
-                print ("server: card select is position", str(CardPos))
-                self.srv_execute_card_selected_command(TeamWonSet, CardPos, Handset, PlayedDeck, DataGame, Scores) # Execute action (including feed-back to the client)
+        if command_str == self.CliMesHead["CardSelected"]:
+            # Card position is normally coded on a 2-chars string
+            CardPos = int(str(Payload, 'UTF-8')) # Convert from bytes received to integer
+            # print ("server: card select is position", str(CardPos))
+            self.srv_execute_card_selected_command(TeamWonSet, CardPos, Handset, PlayedDeck, DataGame, Scores) # Execute action (including feed-back to the client)
+        if command_str == self.CliMesHead["AnnoncesValidated"]: # Client clicked to remove annonces
+            # No payload expected for this commmand
+            DataGame.set_game_state("Play") # Change State to Play
+            # Force refresh and telling the client is done automatically later, except the change of state.
+            self.srv_send_force_state("Play", CurrentPlayer - 1)
 
 
     def srv_give_master_and_listen_commands(self, Handset, PlayedDeck, TeamWonSet, DataGame, Scores):
