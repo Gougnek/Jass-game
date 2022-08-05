@@ -7,6 +7,7 @@ import socket, selectors, types, sys, pickle
 import time, copy
 import Hand
 from SrvCom import DataGameToSend
+import inspect
 
 class ClientSocket:
 
@@ -38,6 +39,10 @@ class ClientSocket:
     
     def cli_change_state(self, NewState):
         if self.state != self.CliStates.index(NewState):
+            # Get name of caller for tracing
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            print('caller name:', calframe[1][3])
             print("Client becomes", NewState)
         self.state = self.CliStates.index(NewState)
         

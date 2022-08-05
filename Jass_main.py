@@ -92,6 +92,7 @@ def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand, Scores)
                 if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Client"):
                     # Need to send message to server that annonces have been validated
                     DataGame.cli_connection.cli_send_annonces_validated()
+                    DataGame.cli_connection.cli_change_state("WaitServer") # Back to Wait Server as he will give back the turn to play later
             player, pos_card = DataGame.game_board.GetCardByClick(x, y, DataGame, handset, ScreenGame)
             if player == -1: # Sanity check if the use clics on something valid
                 continue # Stop here and go back to the top of the loop
