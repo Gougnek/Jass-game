@@ -16,7 +16,7 @@ class Preferences:
         self.NetworkMode = self.NetworkModesList.index("Standalone")
         self.ServerIP = "127.0.0.1" # Server to connect to when in client mode
         self.ServerPort = 65432 # Server port when in client mode
-        self.ShowPrefWindowAtStart = False # Can be set to true manually for generating binary version
+        self.ShowPrefWindowAtStart = True # Can be set to true manually for generating binary version
 
     
     def PrepareWindowVariables(self):

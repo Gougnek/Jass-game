@@ -8,7 +8,7 @@ Usage:
 from setuptools import setup
 
 APP = ['Jass_main.py']
-DATA_FILES = [('', ['cards'])]
+DATA_FILES = [('', ['Pictures'])]
 OPTIONS = {}
 
 setup(

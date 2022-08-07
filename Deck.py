@@ -92,9 +92,9 @@ class Deck:
                 card = Card(suit, rank)
                 self.cards.append(card)
         try:
-            self.back_picture = pygame.image.load(Path("cards/Back/") / 'back1.png') # Load a background, valid for all cards
+            self.back_picture = pygame.image.load(Path("Pictures/cards/Back/") / 'back1.png') # Load a background, valid for all cards
         except:
-            print("cards/Back/back1.png not found.")
+            print("Pictures/cards/Back/back1.png not found.")
 
     def ResetForNextSet(self, DataGame, handset, TeamWonSet, Scores):
         """ Function to call to reset everything, ready for new set

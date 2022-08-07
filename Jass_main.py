@@ -171,6 +171,8 @@ if __name__ == '__main__':
     scores = Scores(2)
     DataGame.Scores = scores # Store direct linke to scores in DataGame
 
+
+
     """ GAME INITIAL SETUP IF SERVER OR STANDALONE """
     # The following actions are not needed if we are client mode (data will be provided by the server)
     if DataGame.is_this_network_mode("Server") or DataGame.is_this_network_mode("Standalone"):
@@ -178,12 +180,13 @@ if __name__ == '__main__':
         deck.distribute_cards(handset, DataGame)
         handset.Inital_game_first_player(DataGame)
         DataGame.set_game_state("SelAtout") # Change initial state to "SelAtout"
-    
+
+
     """ GRAPHICAL INIT PART """
     # Construct an object to display
     ScreenGame = GameBoard(Height = 648, Width = 1152)
     DataGame.game_board = ScreenGame # Store reference to screen game for easier acess in functions
-    
+
       
     """ SERVER INITIAL SETUP """
     if DataGame.is_this_network_mode("Server"):
@@ -202,7 +205,7 @@ if __name__ == '__main__':
         # The server must force first update, otherwise nothing will be visible
         ScreenGame.update(DataGame, handset, TeamWonSet, scores, card_picts, PlayedDeckHand)
         
-    
+
     """ CLIENT INITIAL SETUP """
     if DataGame.is_this_network_mode("Client"):
         # client_connect_and_test(handset) # Temporary: get the player 0 hand and returns
@@ -225,6 +228,8 @@ if __name__ == '__main__':
     DataGame.scores = scores
     DataGame.card_picts = card_picts
     DataGame.PlayedDeckHand = PlayedDeckHand
+
+
 
     """ EVENTS LOOP """
     while not Quit:
