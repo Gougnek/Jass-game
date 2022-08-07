@@ -19,9 +19,9 @@ class CardPicture:
         
         PictureFileName = Card.rank_names_file[self.rank] + str(self.suit + 1) + '.png'
         try:
-            self.picture = pygame.image.load(Path("Pictures/cards/") / PictureFileName)
+            self.picture = pygame.image.load(Path("Data/cards/") / PictureFileName)
         except:
-            mypath = "Pictures/cards/" + PictureFileName
+            mypath = "Data/cards/" + PictureFileName
             print(mypath + " not found.")
 
 class CardsPictures:
@@ -42,9 +42,9 @@ class CardsPictures:
         
         # Add Background picture
         try:
-            self.background_picture = pygame.image.load(Path("Pictures/cards/Back/back1.png"))
+            self.background_picture = pygame.image.load(Path("Data/cards/Back/back1.png"))
         except:
-            print("Pictures/cards/Back/Back1.png not found.")
+            print("Data/cards/Back/Back1.png not found.")
             
     def GetCardPicture(self, suit, rank):
         # Do a search int he list of cards and return the picture
@@ -121,5 +121,5 @@ class Atout:
         for i in range(1,5):
             card = Card(i-1,0) # Fake cards, from 0 to 3, with filenames from 1 to 4
             filename = 'suit' + str(i) + '.png'
-            card.picture = pygame.image.load(Path("Pictures/cards/") / filename)
+            card.picture = pygame.image.load(Path("Data/cards/") / filename)
             self.cards.append(card)

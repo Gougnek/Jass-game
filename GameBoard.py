@@ -38,25 +38,25 @@ class GameBoard:
         # Load background picture when error
         PictureFileName = 'table_background_red.png'
         try:
-            self.background_pic_error = pygame.image.load(Path("Pictures/") / PictureFileName)
+            self.background_pic_error = pygame.image.load(Path("Data/") / PictureFileName)
         except:
-            mypath = "Pictures/" + PictureFileName
+            mypath = "Data/" + PictureFileName
             print(mypath + " not found.")
 
         # Load background standard picture
         PictureFileName = 'table_background.png'
         try:
-            self.background_pic = pygame.image.load(Path("Pictures/") / PictureFileName)
+            self.background_pic = pygame.image.load(Path("Data/") / PictureFileName)
         except:
-            mypath = "Pictures/" + PictureFileName
+            mypath = "Data/" + PictureFileName
             print(mypath + " not found.")
 
         # Load background picture when player inactive
         PictureFileName = 'table_background_grayed.png'
         try:
-            self.background_pic_inactive = pygame.image.load(Path("Pictures/") / PictureFileName)
+            self.background_pic_inactive = pygame.image.load(Path("Data/") / PictureFileName)
         except:
-            mypath = "Pictures/" + PictureFileName
+            mypath = "Data/" + PictureFileName
             print(mypath + " not found.")
 
     def SpecialClicks(self, x, y, DataGame, gameDisplay):

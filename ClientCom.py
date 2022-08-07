@@ -7,7 +7,6 @@ import socket, selectors, types, sys, pickle
 import time, copy
 import Hand
 from SrvCom import DataGameToSend
-import inspect
 
 class ClientSocket:
 
@@ -27,7 +26,7 @@ class ClientSocket:
                                             "ForceState" : "FS", \
                                                 "CardsAnnonces" : "CA"} # From Server Messages types (Str) and headers (2 chars)
     CliStates = ["Init", "Master", "WaitServer"] # Possible states of the client mode
-    CliMesHead = {"CardSelected" : "CS", "AnnoncesValidated" : "AV"} 
+    CliMesHead = {"CardSelected" : "CS"} 
 
     def __init__(self, sock=None):
         if sock is None:
@@ -39,10 +38,6 @@ class ClientSocket:
     
     def cli_change_state(self, NewState):
         if self.state != self.CliStates.index(NewState):
-            # Get name of caller for tracing
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-            print('caller name:', calframe[1][3])
             print("Client becomes", NewState)
         self.state = self.CliStates.index(NewState)
         
@@ -101,11 +96,10 @@ class ClientSocket:
         """ Receive GameData from server (payload) and replace local game data
         """
         NewAnnonces = pickle.loads(payload)
-        handset.TeamAnnonce = NewAnnonces.team_annonce
         # Copy received data the annonce of each hand
         for player in range(0,4):
-            for cardID in range(0, len(NewAnnonces.annonces_to_send[player])):
-                handset.players[player].annonces_cards.append(NewAnnonces.annonces_to_send[player][cardID])
+            if len(NewAnnonces.annonces_to_send[player]) > 0:
+                handset.players[player].annonces_cards.append(NewAnnonces.annonces_to_send[player])
         return
 
     def client_update_played_cards(self, payload, PlayedDeckHand):
@@ -199,12 +193,6 @@ class ClientSocket:
         self.sock.send(PayloadSizeStringBytes)
         return    
 
-    def cli_send_annonces_validated(self):
-        """ Called when the user selected a card on the client and need to send that to the server """
-        
-        PayloadSize = 0 # No payload
-        self.cli_send_header("AnnoncesValidated", PayloadSize) # Send Header and message size
-        return
     
     def cli_send_card_selected(self, pos_card):
         """ Called when the user selected a card on the client and need to send that to the server """
@@ -262,7 +250,7 @@ class ClientSocket:
                     
             # Check if we are waiting the payload size
             if RecState == ReceptionStates.index("GetSize"):
-                print('GetSize Received' + str(data) + '.')
+                print('GetSize Received', data)
                 mysize = len(data)
                 if mysize == 5: # We received the payload size on 5 bytes, string
                     SizeToGet = int(data)

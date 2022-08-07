@@ -88,11 +88,7 @@ def ManageInterfaceEvents(DataGame, handset, TeamWonSet, PlayedDeckHand, Scores)
             if DataGame.state == DataGame.GameStates.index("ShowAnnonces"): # Change mode wherever the click is
                 DataGame.set_game_state("Play") # Just stop showing annonce and go to play mode
                 if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Server"): 
-                    DataGame.SrvComObject.srv_send_force_state("Play", -1) # Force client status change
-                if DataGame.preferences.NetworkMode == DataGame.preferences.NetworkModesList.index("Client"):
-                    # Need to send message to server that annonces have been validated
-                    DataGame.cli_connection.cli_send_annonces_validated()
-                    DataGame.cli_connection.cli_change_state("WaitServer") # Back to Wait Server as he will give back the turn to play later
+                    DataGame.SrvComObject.srv_send_force_state("Play") # Force client status change
             player, pos_card = DataGame.game_board.GetCardByClick(x, y, DataGame, handset, ScreenGame)
             if player == -1: # Sanity check if the use clics on something valid
                 continue # Stop here and go back to the top of the loop
@@ -133,7 +129,7 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         ArgMode = sys.argv[1]
         print ('Requested mode:', str(ArgMode))
-        
+    
     
     """ INIT PART """
     DataGame = GameData(NbPlayers = 4) # Create data game for 4 players
@@ -145,6 +141,9 @@ if __name__ == '__main__':
         DataGame.preferences.NetworkMode = DataGame.preferences.NetworkModesList.index("Client")
     elif ArgMode == "standalone":
         DataGame.preferences.NetworkMode = DataGame.preferences.NetworkModesList.index("Standalone")
+
+    if ArgMode == "": # We started without options on the command line, then, read preference file
+        DataGame.preferences.ReadPrefFile()
 
     # Check if we need to display the preference window at launch
     if DataGame.preferences.ShowPrefWindowAtStart:
@@ -172,8 +171,6 @@ if __name__ == '__main__':
     scores = Scores(2)
     DataGame.Scores = scores # Store direct linke to scores in DataGame
 
-
-
     """ GAME INITIAL SETUP IF SERVER OR STANDALONE """
     # The following actions are not needed if we are client mode (data will be provided by the server)
     if DataGame.is_this_network_mode("Server") or DataGame.is_this_network_mode("Standalone"):
@@ -181,13 +178,12 @@ if __name__ == '__main__':
         deck.distribute_cards(handset, DataGame)
         handset.Inital_game_first_player(DataGame)
         DataGame.set_game_state("SelAtout") # Change initial state to "SelAtout"
-
-
+    
     """ GRAPHICAL INIT PART """
     # Construct an object to display
     ScreenGame = GameBoard(Height = 648, Width = 1152)
     DataGame.game_board = ScreenGame # Store reference to screen game for easier acess in functions
-
+    
       
     """ SERVER INITIAL SETUP """
     if DataGame.is_this_network_mode("Server"):
@@ -206,7 +202,7 @@ if __name__ == '__main__':
         # The server must force first update, otherwise nothing will be visible
         ScreenGame.update(DataGame, handset, TeamWonSet, scores, card_picts, PlayedDeckHand)
         
-
+    
     """ CLIENT INITIAL SETUP """
     if DataGame.is_this_network_mode("Client"):
         # client_connect_and_test(handset) # Temporary: get the player 0 hand and returns
@@ -229,8 +225,6 @@ if __name__ == '__main__':
     DataGame.scores = scores
     DataGame.card_picts = card_picts
     DataGame.PlayedDeckHand = PlayedDeckHand
-
-
 
     """ EVENTS LOOP """
     while not Quit:

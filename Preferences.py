@@ -16,7 +16,7 @@ class Preferences:
         self.NetworkMode = self.NetworkModesList.index("Standalone")
         self.ServerIP = "127.0.0.1" # Server to connect to when in client mode
         self.ServerPort = 65432 # Server port when in client mode
-        self.ShowPrefWindowAtStart = True # Can be set to true manually for generating binary version
+        self.ShowPrefWindowAtStart = False # Can be set to true manually for generating binary version
 
     
     def PrepareWindowVariables(self):
@@ -102,3 +102,21 @@ class Preferences:
         self.btn_validate.grid(column=2, row=Currow)
         
         self.PrefWin.mainloop() # Wait that the window is destroyed (after validatino or cancellation)
+
+    def ReadPrefFile(self):
+        """ Read config from preferences if it exists
+        
+        Expected file content:
+            * Mode: [Standalone, Client, Server]
+            * IP: [192.168.0.1]
+            * Port: [65432]
+        
+        """
+        # TODO: Manage error cases to avoid crash
+        f = open("Data/JassPreferences.txt", "r")
+        NetworkModeStr = f.readline()
+        self.NetworkMode = self.NetworkModesList.index(NetworkModeStr.strip())
+        ServerIP = f.readline()
+        self.ServerIP = ServerIP.strip()
+        Port = f.readline()
+        self.Port = int(Port.strip())
