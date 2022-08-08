@@ -3,7 +3,7 @@
     Classes in that file manage objects and methods related to Hand and Handset management
 """
 
-from site import addsitedir
+# from site import addsitedir
 from Deck import Deck
 from GameData import GameData
 import pygame, copy
