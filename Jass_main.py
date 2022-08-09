@@ -149,6 +149,8 @@ if __name__ == '__main__':
     if DataGame.preferences.ShowPrefWindowAtStart:
         DataGame.preferences.DisplayPrefWindow()
 
+    DataGame.preferences.PrintPreferences() # Display final preferences in the console
+    
     """ INITIALIZATION FOR ALL MODES """
     deck = Deck() # Create initial cards
     card_picts = CardsPictures() # Create object with all cards pictures (for and back grounds)

@@ -103,6 +103,14 @@ class Preferences:
         
         self.PrefWin.mainloop() # Wait that the window is destroyed (after validatino or cancellation)
 
+    def PrintPreferences(self):
+        """ Display the preferences """
+        print("Preferences in use:")
+        print("Network Mode: " + self.NetworkModesList[self.NetworkMode])
+        print("IP address: " + self.ServerIP)
+        print("IP port: " + str(self.Port))
+        return
+    
     def ReadPrefFile(self):
         """ Read config from preferences if it exists
         
@@ -112,11 +120,17 @@ class Preferences:
             * Port: [65432]
         
         """
-        # TODO: Manage error cases to avoid crash
-        f = open("Data/JassPreferences.txt", "r")
-        NetworkModeStr = f.readline()
-        self.NetworkMode = self.NetworkModesList.index(NetworkModeStr.strip())
-        ServerIP = f.readline()
-        self.ServerIP = ServerIP.strip()
-        Port = f.readline()
-        self.Port = int(Port.strip())
+        try:
+            f = open("Data/JassPreferences.txt", "r")
+            NetworkModeStr = f.readline()
+            self.NetworkMode = self.NetworkModesList.index(NetworkModeStr.strip())
+            ServerIP = f.readline()
+            self.ServerIP = ServerIP.strip()
+            Port = f.readline()
+            self.Port = int(Port.strip())
+            
+        except:
+            print("Data/JassPreferences.txt not found. Default preferences remain")
+        return
+    
+        
