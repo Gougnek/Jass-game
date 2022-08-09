@@ -319,7 +319,6 @@ class Hand(Deck):
                     PreviousRank = card.rank
                     CounterCards = 1 # We have one card in the row
 
-        print ("End of function Check4SameRank, result: ", str(Found))
         return Found
 
 

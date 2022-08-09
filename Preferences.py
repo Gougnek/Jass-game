@@ -108,29 +108,41 @@ class Preferences:
         print("Preferences in use:")
         print("Network Mode: " + self.NetworkModesList[self.NetworkMode])
         print("IP address: " + self.ServerIP)
-        print("IP port: " + str(self.Port))
+        print("IP port: " + str(self.ServerPort))
         return
     
     def ReadPrefFile(self):
         """ Read config from preferences if it exists
         
-        Expected file content:
+        Expected file content (one settings per line):
             * Mode: [Standalone, Client, Server]
             * IP: [192.168.0.1]
             * Port: [65432]
         
         """
+        
+        # Save current preferences to restore in case of error.
+        NetworkModeSave = self.NetworkMode
+        ServerPortSave = self.ServerPort
+        ServerIPSave = self.ServerIP
+        
         try:
             f = open("Data/JassPreferences.txt", "r")
+        except:
+            print("Data/JassPreferences.txt not found. Default preferences remain")
+        
+        try:
             NetworkModeStr = f.readline()
             self.NetworkMode = self.NetworkModesList.index(NetworkModeStr.strip())
             ServerIP = f.readline()
             self.ServerIP = ServerIP.strip()
             Port = f.readline()
-            self.Port = int(Port.strip())
-            
+            self.ServerPort = int(Port.strip())
         except:
-            print("Data/JassPreferences.txt not found. Default preferences remain")
+            print("Preferences: Couldn't read one or more line. Restoring previous ones")
+            self.NetworkMode = NetworkModeSave
+            self.ServerPort = ServerPortSave
+            self.ServerIP = ServerIPSave
         return
     
         
