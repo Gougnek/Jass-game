@@ -533,7 +533,6 @@ class HandSet(Hand):
                     self.action_play_card(pos_card, played_deck, TeamWonSet, DataGame, Scores)  # This function will change current player.
                     if DataGame.is_this_network_mode("Standalone") or DataGame.is_this_network_mode("Server"):
                         DataGame.ErrorState = DataGame.ErrorStates.index("NoError")
-                        print ("Hand action_card_selected OK")
                         # Now either the new player is the server (So need to be master), or a client (need to go WaitClient)
                         if DataGame.is_this_network_mode("Server"):
                             if DataGame.current_player == 0: # This is the new player as it has been updated in action_play_card
@@ -545,7 +544,6 @@ class HandSet(Hand):
                     # If se are in standalone mode OR server mode, AND player 0, add some graphical effect to show that card is refused
                     if DataGame.is_this_network_mode("Standalone") or (DataGame.is_this_network_mode("Server") and DataGame.current_player == 0):
                         DataGame.ErrorState = DataGame.ErrorStates.index("NotAllowed")
-                        print ("Hand action_card_selected Error")
                     WasActionDone = False
             
             if DataGame.state == DataGame.GameStates.index("SelAtout") or DataGame.state == DataGame.GameStates.index("SelAtoutChibre"): # We are in init, so select atout or chibre
